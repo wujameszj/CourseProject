@@ -1,6 +1,5 @@
 import streamlit as st
 from top2vec import Top2Vec as T2V
-#from sklearn.datasets import fetch_20newsgroups as news
 
 import matplotlib.pyplot as plt
 
@@ -20,9 +19,7 @@ if dataset=='arxiv':
 
 @st.cache
 def generate_model():
-    #newsgroups = news(subset='all', remove=('headers', 'footers', 'quotes'))
-    #model = T2V(documents=newsgroups.data, speed="fast-learn", workers=8)
-    model = T2V.load('20news.model')
+    model = T2V.load('models/20news.model')
     return model
 
 model = generate_model()
