@@ -29,7 +29,7 @@ def extract_documents(url='https://cs.nyu.edu/~roweis/data/nips12raw_str602.tgz'
                     yield member_bytes.decode('utf-8', errors='replace')
                     
 @st.cache
-def generate_LDA_model(data, n_topic, passes=3, iterations=99):
+def generate_LDA_model(data, n_topic, passes, iters):
     docs = data['data'] #list(extract_documents())[:99]
 
     if type(docs[0]) is str:               # streamlit caches previous runs, wherein docs is already a list of token lists  
@@ -47,7 +47,7 @@ def generate_LDA_model(data, n_topic, passes=3, iterations=99):
 
     model = LdaModel(
         corpus, n_topic, dictionary.id2token, chunksize=9999,
-        alpha='auto', eta='auto', passes=passes, iterations=iterations, eval_every=None
+        alpha='auto', eta='auto', passes=passes, iterations=iters, eval_every=None
     ) 
     return model, list(dictionary.values())
 
@@ -64,21 +64,36 @@ def retrieve(dataset, fromDate=None, toDate=None):
     if dataset == 'sklearn20news':
         return news(subset='all', remove=('headers', 'footers', 'quotes')).data
                         
-@st.cache
-def create_wordcloud(model, topic, nWords=30):
-    wc = WordCloud(width=1600, height=400, background_color='black')   
+#@st.cache
+def create_wordcloud(column, model, topicIDs, nWords=30):
     
-    if type(model) is LdaModel:
-        wc = wc.generate_from_frequencies(dict(model.show_topic(topic, nWords)))
-    else:
-        word_prob = zip(
-            model.topic_words[topic], 
-            softmax(model.topic_word_scores[topic])
-        )
-        wc = wc.generate_from_frequencies(dict(word_prob))
+    canvas = column.empty()
+    #canvas.image('data/my.png')
+    
+    wc_list = []
+    for topicID in topicIDs:
+        wc = WordCloud(width=1600, height=400, background_color='black')
+        if type(model) is LdaModel:
+            # wc = wc.generate_from_frequencies(
+            #     dict(model.show_topic(topicID, nWords))
+            # )
+            # wc_list.append(wc)
+            # canvas.image(wc_list)
+            word_prob = model.show_topic(topicID, nWords)
+        elif type(model) is T2V:
+            word_prob = zip(
+                model.topic_words[topicID], 
+                softmax(model.topic_word_scores[topicID])
+            )
         
-    return wc.to_array()
+        wc = wc.generate_from_frequencies(dict(word_prob))
+        wc_list.append(wc.to_array())
+        canvas.image(wc_list)
+        
+#    return wc.to_array()
     
+    
+#def main():
     
 st.set_page_config('CS410 Project', layout="wide")
 st.title('Compare Topic Modeling Algorithms')
@@ -95,8 +110,7 @@ elif dataset == 'sklearn20news':
     data = {'name': 'sklearn20news', 'data': retrieve(dataset)}
 
 
-patient_msg.info('Please be patient, especially with LDA.')
-
+patient_msg.info('Please be patient. LDA could take more than 10 minutes.')
 t2v_model = generate_t2v_model(data)
 
 
@@ -104,7 +118,10 @@ n_topic = t2v_model.get_num_topics()
 topics, _, __ = t2v_model.get_topics(n_topic)
 topic_words = [None] + [words[0] for words in topics] 
 
-n_topic = st.sidebar.number_input('number of topics for LDA', 1, 999, n_topic//2, help=f'{n_topic//2} is an approximate number recommended by the top2vec algorithm for this dataset. A larger number of topics will increase computation time.')
+lda_param = st.sidebar.expander('training parameters for LDA model')
+n_topic = lda_param.number_input('number of topics', 1, 999, n_topic//2, help='A larger number increases computation time.')
+passes = lda_param.number_input('passes', 1, 99, 3, help='A larger number increases computation time.')
+iters = lda_param.number_input('iterations', 1, 999, 50, help='A larger number increases computation time.')
 topic = st.sidebar.selectbox('search topic by word', topic_words, help='This list consists of likely topic words in this dataset.')
 
 
@@ -116,14 +133,15 @@ if topic is None:
 else:
     _,_,_, topicID = t2v_model.query_topics(str(topic), nWordcloud)
     
-_wc = []
-left_wc = left.empty()
-for i in topicID:
-    _wc.append(create_wordcloud(t2v_model, i))
-    left_wc.image(_wc)
-#    left.image([create_wordcloud(t2v_model, i) for i in topicID])
+#_wc = []
+#left_wc = left.empty()
+# for i in topicID:
+#     _wc.append(create_wordcloud(t2v_model, i))
+#     left_wc.image(_wc)
+create_wordcloud(left, t2v_model, topicID)
 
-lda_model, dictionary = generate_LDA_model(data, n_topic)
+#st.write(iters, type(iters))
+lda_model, dictionary = generate_LDA_model(data, n_topic, passes, iters)
 
 if topic is None:
     topicID = range(nWordcloud)
@@ -131,11 +149,16 @@ else:
     topicID = lda_model.get_term_topics(dictionary.index(topic), 0)
     topicID = [i for i,_ in topicID[:nWordcloud]]
     
-_wc = []
-right_wc = right.empty()
-for i in topicID:
-    _wc.append(create_wordcloud(t2v_model, i))
-right.image([create_wordcloud(lda_model, i) for i in topicID])
+# _wc = []
+# right_wc = right.empty()
+# for i in topicID:
+#     _wc.append(create_wordcloud(t2v_model, i))
+# right.image([create_wordcloud(lda_model, i) for i in topicID])
+create_wordcloud(right.empty(), lda_model, topicID)
 
 
 patient_msg.empty() #.write('')Q
+
+
+# if __name__ == '__main__':
+#     main()
