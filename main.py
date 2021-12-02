@@ -39,7 +39,7 @@ def generate_LDA_model(data, nTopic, passes, iters):
     #docs = [[lemma.lemmatize(token) for token in doc] for doc in docs]
 
     dictionary = Dictionary(docs)
-    dictionary.filter_extremes(no_below=2, no_above=.8, keep_n=None)
+    dictionary.filter_extremes(no_below=2, no_above=.5, keep_n=None)
     corpus = [dictionary.doc2bow(doc) for doc in docs]
     _ = dictionary[0]  # This is only to "load" the dictionary.
     
@@ -47,16 +47,21 @@ def generate_LDA_model(data, nTopic, passes, iters):
         corpus, nTopic, dictionary.id2token, chunksize=99999,
         alpha='auto', eta='auto', passes=passes, iterations=iters, eval_every=None, update_every=0
     ) 
-    doc_topic_prob = [model[doc] for doc in corpus]         # equivalent to get_document_topics()
-    return model, list(dictionary.values()), doc_topic_prob
+#    doc_topic_prob = [model[doc] for doc in corpus]         # equivalent to get_document_topics()
+    return model, list(dictionary.values()), corpus #doc_topic_prob
 
 @st.experimental_memo
-def calc_relevance(doc_topic_prob, topicID):
+def calc_relevance(corpus, wordID):
     return array( 
-        [sum([p if i==topicID else 0 for i,p in doc]) for doc in doc_topic_prob] 
+        [sum([n if i==wordID else 0 for i,n in doc]) for doc in corpus]
     )
-    
-#calc_relevance = lambda doc_topic_prob, topicID: [sum([p if i==topicID else 0 for i,p in doc]) for doc in doc_topic_prob]
+
+# def calc_relevance(doc_topic_prob, topicID):
+#     return array( 
+#         [sum([p if i==topicID else 0 for i,p in doc]) for doc in doc_topic_prob] 
+#     )
+
+# calc_relevance = lambda doc_topic_prob, topicID: [sum([p if i==topicID else 0 for i,p in doc]) for doc in doc_topic_prob]
 
 
 @st.cache(allow_output_mutation=True)
@@ -64,7 +69,7 @@ def generate_t2v_model(data, speed='learn'):
     if data['name'] == 'sklearn20news':
         return T2V.load('models/20news.model')
     else:
-        return T2V(documents=data['data'], speed=speed, min_count=50, keep_documents=False)
+        return T2V(documents=data['data'], speed=speed, min_count=9, keep_documents=False, workers=4)
 
 @st.cache(allow_output_mutation=True)
 def retrieve(dataset, fromDate=None, toDate=None):    
@@ -95,7 +100,7 @@ def create_wordcloud(model, topicIDs, nWords=30):
 def main():
     st.set_page_config('CS410 Project', layout="wide")
     st.title('Compare Topic Modeling Algorithms')
-    patient = st.empty()
+    # patient = st.empty()
     msg = st.empty()
     left, right = st.columns(2)
     left.header('top2vec'); right.header('LDA')
@@ -122,9 +127,9 @@ def main():
 
     with st.sidebar:
         st.subheader('LDA parameters')
-        lda_param = st.expander('optional training parameters for LDA model')
-        with lda_param:
-            nTopic = int(st.number_input('number of topics', 0, 999, 0, help=f'A larger number increases computation time. Based on Top2vec, we recommend {int(nTopic/1.5)} for this dataset.'))
+        nTopic = int(st.number_input('number of topics', 0, 999, 0, help=f'A larger number increases computation time. Based on Top2vec, we recommend {int(nTopic/1.5)} for this dataset.'))
+        optional = st.expander('optional training parameters')
+        with optional:    
             passes = int(st.number_input('passes', 1, 99, 2, help='Higher number increases model quality at the cost of computation time.'))
             iters = int(st.number_input('iterations', 1, 999, 50, help='Higher number increases model quality at the cost of computation time.'))
         topic = st.selectbox('search topic by word', topic_words, help='This list consists of likely topic words in this dataset.')
@@ -137,7 +142,7 @@ def main():
         else:
             msg.info(f'Displaying {nExample} topics and documents related to "{topic}".')
             _,_,_, topicIDs = t2v_model.query_topics(str(topic), nExample)
-            _,_, docIDs = t2v_model.search_documents_by_keywords([topic], nExample, keywords_neg=None, return_documents=True, use_index=False, ef=None)
+            _,_, docIDs = t2v_model.search_documents_by_keywords([topic], nExample, keywords_neg=None, return_documents=True, use_index=False, ef=len(data['data'])  # ef max value for best search accuracy
         st.image(create_wordcloud(t2v_model, topicIDs))
         st.table([data['data'][i] for i in docIDs])
     
@@ -145,16 +150,18 @@ def main():
     if nTopic:
         with right:
            # patient.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations ... could take more than {nTopic*passes*iters//99} minutes. Please be patient.')
-            patient.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
-            lda_model, dictionary, doc_topic_prob = generate_LDA_model(data, nTopic, passes, iters)
-            
+            patient = st.info(f'Training LDA model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
+#            lda_model, dictionary, doc_topic_prob = generate_LDA_model(data, nTopic, passes, iters)
+            lda_model, dictionary, corpus = generate_LDA_model(data, nTopic, passes, iters)
+           
             if topic is None:
                 topicIDs, docIDs = range(nExample), range(nExample, nExample*2)
             else:
                 topicIDs = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
                 topicIDs = [i for i,_ in topicIDs[:nExample]]
                 
-                doc_prob = calc_relevance(doc_topic_prob, topicIDs[0])
+ #               doc_prob = calc_relevance(doc_topic_prob, topicIDs[0])
+                doc_prob = calc_relevance(corpus, dictionary.index(topic))
                 docIDs = argp(doc_prob, -nExample)[-nExample:]
                 docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first
                 
