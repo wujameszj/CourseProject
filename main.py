@@ -18,6 +18,7 @@ from sklearn.datasets import fetch_20newsgroups as news
 
 from numpy import array, argpartition as argp, argsort
 from scipy.special import softmax
+from pandas import DataFrame as DF
 
 #import logging
 #logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -77,12 +78,12 @@ def retrieve(dataset, fromDate=None, toDate=None):
         return news(subset='all', remove=('headers', 'footers', 'quotes')).data
     
    
-@st.experimental_memo
+#@st.experimental_memo
 def _create_wordcloud(word_prob):
     wc = WordCloud(width=1600, height=400, background_color='black')
     return wc.generate_from_frequencies(dict(word_prob)).to_array()
 
-def create_wordcloud(model, topicIDs, nWords=30):
+def __create_wordcloud(model, topicIDs, nWords=30):
     #canvas = column.empty()
     wc_list = []
     for topicID in topicIDs:
@@ -97,11 +98,25 @@ def create_wordcloud(model, topicIDs, nWords=30):
         # canvas.image(wc_list)
     return wc_list
 
+def create_wordcloud(model, topicIDs, nWords=30):
+    with st.container():
+        for topicID in topicIDs:
+            if type(model) is LdaModel:
+                word_prob = model.show_topic(topicID, nWords)
+            elif type(model) is T2V:
+                word_prob = zip(
+                    model.topic_words[topicID], 
+                    softmax(model.topic_word_scores[topicID])
+                )
+            st.image(_create_wordcloud(word_prob))
+
+
 @st.experimental_memo(suppress_st_warning=True)
 def display_doc(docs):
     for i, doc in enumerate(docs):
         with st.expander(f'Doc {i+1}', True):
-            st.text(doc)
+            st.dataframe(DF([doc]), height=500)
+#            st.text(doc)
     
     
 def main():
@@ -141,25 +156,26 @@ def main():
             passes = int(st.number_input('passes', 1, 99, 2, help='Higher number increases model quality at the cost of computation time.'))
             iters = int(st.number_input('iterations', 1, 999, 50, help='Higher number increases model quality at the cost of computation time.'))
         st.subheader('Step 3: Compare topics and documents')
-        topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')
+        topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
 
     
     with left:
         if topic is None:
-            msg.info(f'Displaying {nExample} unrelated topics and documents.')
+            msg.info(f'Displaying {nExample*2} unrelated topics and documents.')
             topicIDs, docIDs = range(nExample*2), range(nExample*2)
         else:
-            msg.info(f'Displaying {nExample} topics and documents related to "{topic}".')
-            _,_,_, topicIDs = t2v_model.query_topics(str(topic), nExample)
+            msg.info(f'Displaying topics and documents related to "{topic}".')
+            _,_,_, topicIDs = t2v_model.query_topics(str(topic), 1)           # topic is actually of type numpy_str which top2vec doesnt accept but LDA (gensim) does
             _, docIDs = t2v_model.search_documents_by_keywords([topic], nExample*2, keywords_neg=None, return_documents=False, use_index=False, ef=len(data['data']))
-        st.image(create_wordcloud(t2v_model, topicIDs))
-#        st.table([data['data'][i] for i in docIDs])
+        create_wordcloud(t2v_model, topicIDs)
+#        st.image(create_wordcloud(t2v_model, topicIDs))
         display_doc( [data['data'][i] for i in docIDs] )
+        
+#        st.table([data['data'][i] for i in docIDs])
         
     
     if nTopic:
         with right:
-           # patient.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations ... could take more than {nTopic*passes*iters//99} minutes. Please be patient.')
             patient = st.info(f'Training with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
 #            lda_model, dictionary, doc_topic_prob = generate_LDA_model(data, nTopic, passes, iters)
             lda_model, dictionary, corpus = generate_LDA_model(data, nTopic, passes, iters)
@@ -167,22 +183,24 @@ def main():
             if topic is None:
                 topicIDs, docIDs = range(nExample*2), range(nExample*2, nExample*4)
             else:
-                topicIDs = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
-                topicIDs = [i for i,_ in topicIDs[:nExample]]
+                st.write(dictionary.index(topic), dictionary.index(str(topic)))
+                topicIDs = lda_model.get_term_topics(dictionary.index(str(topic)), minimum_probability=0)
+                topicIDs = [i for i,p in topicIDs[:1]]
                 
  #               doc_prob = calc_relevance(doc_topic_prob, topicIDs[0])
                 doc_prob = calc_relevance(corpus, dictionary.index(topic))
                 docIDs = argp(doc_prob, -nExample*2)[-nExample*2:]
                 docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first
-                
-            st.image(create_wordcloud(lda_model, topicIDs))
-#            st.table([data['data'][i] for i in docIDs])
+            patient.empty()
+            create_wordcloud(lda_model, topicIDs)
+#            st.image(create_wordcloud(lda_model, topicIDs))
             display_doc( [data['data'][i] for i in docIDs] )
+#            st.table([data['data'][i] for i in docIDs])
 #            st.table( st.expander(data['data'][i]) for i in docIDs )
-        patient.empty()
+        
 
 
-    st.sidebar.write('[Source code on Github](https://github.com/wujameszj/CourseProject)')
+    st.sidebar.write('App is sluggish? Run it on your own machine: [Source code on Github](https://github.com/wujameszj/CourseProject)')
 
 
 if __name__ == '__main__':
