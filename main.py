@@ -32,7 +32,7 @@ def generate_LDA_model(data, nTopic, passes, iters):
     _ = dictionary[0]  # This is only to "load" the dictionary.
     
     model = LdaModel(
-        corpus, nTopic, dictionary.id2token, chunksize=environ.get('CHUNK', 999), passes=passes, iterations=iters, update_every=1, 
+        corpus, nTopic, dictionary.id2token, chunksize=environ.get('CHUNK', 99999), passes=passes, iterations=iters, update_every=1, 
         alpha='auto', eta='auto', minimum_probability=0, eval_every=None
     ) 
 #    doc_topic_prob = [model[doc] for doc in corpus]         # equivalent to get_document_topics()
@@ -57,7 +57,7 @@ def generate_t2v_model(data, speed='learn'):
     if data['name'] == 'sklearn20news':
         return T2V.load('models/20news.model')
     else:
-        return T2V(documents=data['data'], speed=speed, min_count=9, keep_documents=False, workers=environ.get('PROC', 8))
+        return T2V(documents=data['data'], speed=speed, min_count=9, keep_documents=False, workers=environ.get('NUMBER_OF_PROCESSORS', 1))
 
 @st.cache(allow_output_mutation=True)
 def retrieve(dataset, fromDate=None, toDate=None):    
@@ -121,7 +121,7 @@ def main():
     left, right = st.columns(2)
     left.header('top2vec'); right.header('LDA')
     
-    WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 4), environ.get('CHUNK', 999999)
+    WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 1), environ.get('CHUNK', 99999)
     
 
     avail_data = ['arxiv', 'twitter', 'NYU/nips12raw_str602', 'reddit', 'sklearn20news']
