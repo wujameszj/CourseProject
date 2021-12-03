@@ -16,6 +16,7 @@ from pandas import DataFrame as DF
 from scipy.special import softmax
 from sklearn.datasets import fetch_20newsgroups as news
 
+from os import environ
 
 
 @st.experimental_memo #@st.cache #(allow_output_mutation=True)
@@ -31,7 +32,7 @@ def generate_LDA_model(data, nTopic, passes, iters):
     _ = dictionary[0]  # This is only to "load" the dictionary.
     
     model = LdaModel(
-        corpus, nTopic, dictionary.id2token, chunksize=999, passes=passes, iterations=iters, update_every=1, 
+        corpus, nTopic, dictionary.id2token, chunksize=environ.get('CHUNK', 999), passes=passes, iterations=iters, update_every=1, 
         alpha='auto', eta='auto', minimum_probability=0, eval_every=None
     ) 
 #    doc_topic_prob = [model[doc] for doc in corpus]         # equivalent to get_document_topics()
@@ -56,7 +57,7 @@ def generate_t2v_model(data, speed='learn'):
     if data['name'] == 'sklearn20news':
         return T2V.load('models/20news.model')
     else:
-        return T2V(documents=data['data'], speed=speed, min_count=9, keep_documents=False, workers=4)
+        return T2V(documents=data['data'], speed=speed, min_count=9, keep_documents=False, workers=environ.get('PROC', 8))
 
 @st.cache(allow_output_mutation=True)
 def retrieve(dataset, fromDate=None, toDate=None):    
@@ -119,6 +120,8 @@ def main():
     left, right = st.columns(2)
     left.header('top2vec'); right.header('LDA')
     
+    WORKER, CHUNKSIZE = environ.get('PROC', 8), environ.get('CHUNK', 999)
+    
 
     avail_data = ['arxiv', 'twitter', 'NYU/nips12raw_str602', 'reddit', 'sklearn20news']
     with st.sidebar:
@@ -150,6 +153,7 @@ def main():
             iters = int(st.number_input('iterations', 1, 999, 50, help=ITER_MSG))
         st.subheader('Step 3: Compare topics and documents')
         topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
+        st.write(f'Running with {WORKER} workers and CHUNKSIZE {CHUNKSIZE}.')
 
     
     with left:
@@ -170,7 +174,7 @@ def main():
     
     if nTopic:
         with right:
-            patient = st.info(f'Training with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
+            patient = st.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
 #            lda_model, dictionary, doc_topic_prob = generate_LDA_model(data, nTopic, passes, iters)
             lda_model, dictionary, corpus = generate_LDA_model(data, nTopic, passes, iters)
            
