@@ -147,7 +147,7 @@ def main():
     with left:
         if topic is None:
             msg.info(f'Displaying {nExample} unrelated topics and documents.')
-            topicIDs, docIDs = range(nExample), range(nExample*2)
+            topicIDs, docIDs = range(nExample*2), range(nExample*2)
         else:
             msg.info(f'Displaying {nExample} topics and documents related to "{topic}".')
             _,_,_, topicIDs = t2v_model.query_topics(str(topic), nExample)
@@ -165,7 +165,7 @@ def main():
             lda_model, dictionary, corpus = generate_LDA_model(data, nTopic, passes, iters)
            
             if topic is None:
-                topicIDs, docIDs = range(nExample), range(nExample*2, nExample*4)
+                topicIDs, docIDs = range(nExample*2), range(nExample*2, nExample*4)
             else:
                 topicIDs = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
                 topicIDs = [i for i,_ in topicIDs[:nExample]]
@@ -179,9 +179,9 @@ def main():
 #            st.table([data['data'][i] for i in docIDs])
             display_doc( [data['data'][i] for i in docIDs] )
 #            st.table( st.expander(data['data'][i]) for i in docIDs )
+        patient.empty()
 
 
-    patient.empty()
     st.sidebar.write('[Source code on Github](https://github.com/wujameszj/CourseProject)')
 
 
