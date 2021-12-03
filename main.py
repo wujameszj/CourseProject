@@ -1,38 +1,24 @@
 
-from top2vec import Top2Vec as T2V
 from gensim.models import LdaModel #, ldamulticore
 from gensim.corpora import Dictionary
-
 import nltk
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer 
-
-from time import time
-import io, re, tarfile, smart_open, os.path
+from top2vec import Top2Vec as T2V
 
 import streamlit as st
+import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 
-import matplotlib.pyplot as plt
+from numpy import array, argmax, argpartition as argp, argsort
+from numpy.random import random
+from pandas import DataFrame as DF
+from scipy.special import softmax
 from sklearn.datasets import fetch_20newsgroups as news
 
-from numpy import array, argpartition as argp, argsort
-from scipy.special import softmax
-from pandas import DataFrame as DF
-
-#import logging
-#logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 
-def extract_documents(url='https://cs.nyu.edu/~roweis/data/nips12raw_str602.tgz'):
-    with smart_open.open(url, "rb") as file:
-        with tarfile.open(fileobj=file) as tar:
-            for member in tar.getmembers():
-                if member.isfile() and re.search(r'nipstxt/nips\d+/\d+\.txt', member.name):
-                    member_bytes = tar.extractfile(member).read()
-                    yield member_bytes.decode('utf-8', errors='replace')
-                    
-@st.cache
+@st.experimental_memo #@st.cache #(allow_output_mutation=True)
 def generate_LDA_model(data, nTopic, passes, iters):
     regex, lemma = RegexpTokenizer(r'\w+'), WordNetLemmatizer()
     docs = [regex.tokenize(doc.lower()) for doc in data['data']]
@@ -45,8 +31,8 @@ def generate_LDA_model(data, nTopic, passes, iters):
     _ = dictionary[0]  # This is only to "load" the dictionary.
     
     model = LdaModel(
-        corpus, nTopic, dictionary.id2token, chunksize=99999,
-        alpha='auto', eta='auto', passes=passes, iterations=iters, eval_every=None, update_every=0
+        corpus, nTopic, dictionary.id2token, chunksize=999, passes=passes, iterations=iters, update_every=1, 
+        alpha='auto', eta='auto', minimum_probability=0, eval_every=None
     ) 
 #    doc_topic_prob = [model[doc] for doc in corpus]         # equivalent to get_document_topics()
     return model, list(dictionary.values()), corpus #doc_topic_prob
@@ -78,7 +64,7 @@ def retrieve(dataset, fromDate=None, toDate=None):
         return news(subset='all', remove=('headers', 'footers', 'quotes')).data
     
    
-#@st.experimental_memo
+@st.experimental_memo
 def _create_wordcloud(word_prob):
     wc = WordCloud(width=1600, height=400, background_color='black')
     return wc.generate_from_frequencies(dict(word_prob)).to_array()
@@ -114,11 +100,17 @@ def create_wordcloud(model, topicIDs, nWords=30):
 @st.experimental_memo(suppress_st_warning=True)
 def display_doc(docs):
     for i, doc in enumerate(docs):
-        with st.expander(f'Doc {i+1}', True):
-            st.dataframe(DF([doc]), height=500)
+        # with st.expander(f'Doc {i+1}', True):
+        doc = doc.strip()
+        n = doc.count('\n') * 30  # approx 35 pixels per line
+        st.text_area('', doc, height=500 if n > 500 else n, key=random())
+#            st.dataframe(DF([doc]), height=500)
 #            st.text(doc)
     
-    
+
+PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch. Higher number may improve model by facilitating convergence for small corpora at the cost of computation time.'
+ITER_MSG = 'Number of E-step per document per pass. Higher number may improve model by fascilitating document convergence at the cost of computation time.'
+
 def main():
     st.set_page_config('CS410 Project', layout="wide")
     st.title('Compare Topic Modeling Algorithms')
@@ -150,24 +142,26 @@ def main():
 
     with st.sidebar:
         st.subheader('Step 2: LDA parameters')
-        nTopic = int(st.number_input('number of topics', 0, 999, 0, help=f'A larger number increases computation time. Based on Top2vec, we recommend {int(nTopic/1.5)} for this dataset.'))
+        nTopic = int(st.number_input(
+            'number of topics', 0, 999, 0, help=f'Larger number increases computation time. Based on Top2vec, we recommend {int(nTopic*.7)} for this dataset.'))
         optional = st.expander('optional training parameters')
         with optional:    
-            passes = int(st.number_input('passes', 1, 99, 2, help='Higher number increases model quality at the cost of computation time.'))
-            iters = int(st.number_input('iterations', 1, 999, 50, help='Higher number increases model quality at the cost of computation time.'))
+            passes = int(st.number_input('passes', 1, 99, 1, help=PASS_MSG))
+            iters = int(st.number_input('iterations', 1, 999, 50, help=ITER_MSG))
         st.subheader('Step 3: Compare topics and documents')
         topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
 
     
     with left:
-        if topic is None:
+        if topic:
+            msg.info(f'Displaying top 6 documents related to "{topic}".')
+            _,_,_, topicIDs = t2v_model.query_topics(str(topic), 1)         # topic is actually of type numpy_str which top2vec doesnt accept but LDA (gensim) does
+            _, docIDs = t2v_model.search_documents_by_keywords([topic], nExample*2, keywords_neg=None, return_documents=False, use_index=False, ef=len(data['data']))
+
+        else:
             msg.info(f'Displaying {nExample*2} unrelated topics and documents.')
             topicIDs, docIDs = range(nExample*2), range(nExample*2)
-        else:
-            msg.info(f'Displaying topics and documents related to "{topic}".')
-            _,_,_, topicIDs = t2v_model.query_topics(str(topic), 1)           # topic is actually of type numpy_str which top2vec doesnt accept but LDA (gensim) does
-            _, docIDs = t2v_model.search_documents_by_keywords([topic], nExample*2, keywords_neg=None, return_documents=False, use_index=False, ef=len(data['data']))
-        create_wordcloud(t2v_model, topicIDs)
+            create_wordcloud(t2v_model, topicIDs)
 #        st.image(create_wordcloud(t2v_model, topicIDs))
         display_doc( [data['data'][i] for i in docIDs] )
         
@@ -180,17 +174,20 @@ def main():
 #            lda_model, dictionary, doc_topic_prob = generate_LDA_model(data, nTopic, passes, iters)
             lda_model, dictionary, corpus = generate_LDA_model(data, nTopic, passes, iters)
            
-            if topic is None:
-                topicIDs, docIDs = range(nExample*2), range(nExample*2, nExample*4)
-            else:
-                st.write(dictionary.index(topic), dictionary.index(str(topic)))
-                topicIDs = lda_model.get_term_topics(dictionary.index(str(topic)), minimum_probability=0)
-                topicIDs = [i for i,p in topicIDs[:1]]
+            if topic:
+                topic_prob = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
+                idx = argmax([p for i,p in topic_prob])
+                topicIDs = [ topic_prob[idx][0] ]
+                
+#                topicIDs = [i for i,p in topicIDs[:1]]
                 
  #               doc_prob = calc_relevance(doc_topic_prob, topicIDs[0])
                 doc_prob = calc_relevance(corpus, dictionary.index(topic))
                 docIDs = argp(doc_prob, -nExample*2)[-nExample*2:]
-                docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first
+                docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first                
+            else:
+                topicIDs, docIDs = range(nExample*2), range(nExample*2, nExample*4)
+                
             patient.empty()
             create_wordcloud(lda_model, topicIDs)
 #            st.image(create_wordcloud(lda_model, topicIDs))
@@ -199,7 +196,6 @@ def main():
 #            st.table( st.expander(data['data'][i]) for i in docIDs )
         
 
-
     st.sidebar.write('App is sluggish? Run it on your own machine: [Source code on Github](https://github.com/wujameszj/CourseProject)')
 
 
@@ -207,3 +203,4 @@ if __name__ == '__main__':
     #nltk.download('wordnet')
     
     main()
+    
