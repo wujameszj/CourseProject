@@ -121,7 +121,7 @@ def main():
     left, right = st.columns(2)
     left.header('top2vec'); right.header('LDA')
     
-    WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 2), environ.get('CHUNK', 999999)
+    WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 4), environ.get('CHUNK', 999999)
     
 
     avail_data = ['arxiv', 'twitter', 'NYU/nips12raw_str602', 'reddit', 'sklearn20news']
