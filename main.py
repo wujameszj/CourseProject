@@ -155,8 +155,7 @@ def main():
         st.subheader('Step 3: Compare topics and documents')
         topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
         
-        st.text(f'*\n\n\nRunning with {WORKER} worker.\nApp is sluggish? Sorry about that.')
-        st.write('Please try running the app locally: [Source code on Github](https://github.com/wujameszj/CourseProject)')
+        st.write(f'_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n _Running with {WORKER} worker._  \nApp is sluggish? Sorry about that.  \nPlease try running the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
 
     
     with left:
