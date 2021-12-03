@@ -112,6 +112,7 @@ def display_doc(docs):
 PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch. Higher number may improve model by facilitating convergence for small corpora at the cost of computation time.'
 ITER_MSG = 'Number of E-step per document per pass. Higher number may improve model by fascilitating document convergence at the cost of computation time.'
 
+
 def main():
     st.set_page_config('CS410 Project', layout="wide")
     st.title('Compare Topic Modeling Algorithms')
@@ -120,7 +121,7 @@ def main():
     left, right = st.columns(2)
     left.header('top2vec'); right.header('LDA')
     
-    WORKER, CHUNKSIZE = environ.get('PROC', 8), environ.get('CHUNK', 999)
+    WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 2), environ.get('CHUNK', 999999)
     
 
     avail_data = ['arxiv', 'twitter', 'NYU/nips12raw_str602', 'reddit', 'sklearn20news']
@@ -153,7 +154,9 @@ def main():
             iters = int(st.number_input('iterations', 1, 999, 50, help=ITER_MSG))
         st.subheader('Step 3: Compare topics and documents')
         topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
-        st.write(f'Running with {WORKER} workers and CHUNKSIZE {CHUNKSIZE}.')
+        
+        st.text(f'*\n\n\nRunning with {WORKER} worker.\nApp is sluggish? Sorry about that.')
+        st.write('Please try running the app locally: [Source code on Github](https://github.com/wujameszj/CourseProject)')
 
     
     with left:
@@ -200,7 +203,6 @@ def main():
 #            st.table( st.expander(data['data'][i]) for i in docIDs )
         
 
-    st.sidebar.write('App is sluggish? Run it on your own machine: [Source code on Github](https://github.com/wujameszj/CourseProject)')
 
 
 if __name__ == '__main__':
