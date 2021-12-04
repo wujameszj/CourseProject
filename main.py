@@ -136,17 +136,16 @@ def main():
             passes = int(st.number_input('passes', 1, 99, 2, help=PASS_MSG))
             iters = int(st.number_input('iterations', 1, 999, 200, help=ITER_MSG))
         st.subheader('Step 3: Compare topics and documents')
-        topic = str(st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.'))   # returns numpy_str
+        topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
         st.write(MISC_MSG)
         
         # TODO  Let user choose number of wordclouds, docs, and doc height
         
     
     with left:
-        st.write(topic, type(topic), '1' if topic else '0')
-        if topic != 'None':
+        if topic:
             msg.info(f'Displaying top 6 documents related to "{topic}".')
-            _,_,_, topicIDs = t2v_model.query_topics(topic, 1)         # topic is actually of type numpy_str which top2vec doesnt accept (but LDA (gensim) does)
+            _,_,_, topicIDs = t2v_model.query_topics(str(topic), 1)         # topic is actually of type numpy_str which top2vec doesnt accept (but LDA (gensim) does)
             _, docIDs = t2v_model.search_documents_by_keywords([topic], nExample*2, keywords_neg=None, return_documents=False, use_index=False, ef=len(data['data']))
         else:
             msg.info(f'Displaying {nExample*2} unrelated topics and documents.')
@@ -161,7 +160,7 @@ def main():
             patient = st.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
             lda_model, dictionary, corpus = train_LDA(data, nTopic, passes, iters)
            
-            if topic != 'None':
+            if topic:
                 topic_prob = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
                 idx = argmax([p for i,p in topic_prob])
                 topicIDs = [ topic_prob[idx][0] ]
