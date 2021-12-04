@@ -79,12 +79,11 @@ def create_wordcloud(model, topicIDs, nWords=30):
                 )
             st.image(_create_wordcloud(word_prob))
 
-            
-@st.experimental_memo(suppress_st_warning=True)
+    
 def display_doc(docs):
-    for i, doc in enumerate(docs):
+    for doc in docs:
         doc = doc.strip()
-        n = doc.count('\n') * 38  # pixels per line
+        n = doc.count('\n') * 30  # pixels per line
         st.text_area('', doc, height=500 if n > 500 else n, key=random())
     
 
@@ -144,7 +143,7 @@ def main():
         
     
     with left:
-        st.write(topic, type(topic))
+        st.write(topic, type(topic), '1' if topic else '0')
         if topic != 'None':
             msg.info(f'Displaying top 6 documents related to "{topic}".')
             _,_,_, topicIDs = t2v_model.query_topics(topic, 1)         # topic is actually of type numpy_str which top2vec doesnt accept (but LDA (gensim) does)
