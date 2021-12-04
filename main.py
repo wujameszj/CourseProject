@@ -92,9 +92,12 @@ def display_doc(docs):
 WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 1), environ.get('CHUNK', 99999)    
 PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch.  \nHigher number may improve model by facilitating convergence for small corpora at the cost of computation time.'
 ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve model by fascilitating document convergence at the cost of computation time.'
-MISC_MSG = f'''_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  - - -\n
-                App is sluggish? Sorry about that. \n_Detecting... {WORKER} worker available._  
-               Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)'''
+# MISC_MSG = f'''_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600** \n- - -\n
+# App is sluggish? Sorry about that.  \n_Detecting... {WORKER} worker available._  
+# Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)'''
+MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
+           f'App is sluggish? Sorry about that.  \n_... Detecting ... {WORKER} worker available._  \n\n'
+            'Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
 
 
 def main():
@@ -119,8 +122,7 @@ def main():
     t2v_model = train_t2v(data)
     
     nTopic = t2v_model.get_num_topics()    
-    topics, _, __ = t2v_model.get_topics(nTopic//2)#[:nTopic//2]
-    st.write(nTopic, len(topics))
+    topics, _, __ = t2v_model.get_topics(nTopic//2)
     topic_words = [None] + [words[0] for words in topics if len(words[0])>2] 
     DEFAULT_EXAMPLE = 3
     nExample = DEFAULT_EXAMPLE if DEFAULT_EXAMPLE < nTopic else nTopic 
@@ -131,7 +133,7 @@ def main():
     with st.sidebar:
         st.subheader('Step 2: LDA parameters')
         nTopic = int(st.number_input(
-            'number of topics', 0, 999, 0, help=f'Larger number increases computation time. Based on Top2vec, we recommend {int(nTopic*.7)} for this dataset.'))
+            'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2vec, we recommend {int(nTopic*.7)} for this dataset.'))
         optional = st.expander('optional training parameters')
         with optional:    
             passes = int(st.number_input('passes', 1, 99, 2, help=PASS_MSG))
