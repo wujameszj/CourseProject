@@ -162,7 +162,7 @@ def main():
             patient = st.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
             lda_model, dictionary, corpus = train_LDA(data, nTopic, passes, iters)
            
-            if topic != 'None:
+            if topic != 'None':
                 topic_prob = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
                 idx = argmax([p for i,p in topic_prob])
                 topicIDs = [ topic_prob[idx][0] ]
