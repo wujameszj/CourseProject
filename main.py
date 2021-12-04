@@ -40,8 +40,7 @@ def train_LDA(data, nTopic, passes, iters):
         corpus, nTopic, dictionary.id2token, chunksize=environ.get('CHUNK', 99999), passes=passes, iterations=iters, update_every=1, 
         alpha='auto', eta='auto', minimum_probability=0, eval_every=None
     ) 
-#    doc_topic_prob = [model[doc] for doc in corpus]         # equivalent to get_document_topics()
-    return model, list(dictionary.values()), corpus #doc_topic_prob
+    return model, list(dictionary.values()), corpus
 
 @st.experimental_memo
 def calc_relevance(corpus, wordID):
@@ -96,7 +95,7 @@ ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve
 # App is sluggish? Sorry about that.  \n_Detecting... {WORKER} worker available._  
 # Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)'''
 MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
-           f'App is sluggish? Sorry about that.  \n_... Detecting ... {WORKER} worker available._  \n\n'
+           f'App feels sluggish? Sorry about that.  \n_... Detecting ... {WORKER} worker available._  \n\n'
             'Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
 
 
@@ -134,29 +133,26 @@ def main():
         st.subheader('Step 2: LDA parameters')
         nTopic = int(st.number_input(
             'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2vec, we recommend {int(nTopic*.7)} for this dataset.'))
-        optional = st.expander('optional training parameters')
-        with optional:    
+        with st.expander('optional training parameters'):    
             passes = int(st.number_input('passes', 1, 99, 2, help=PASS_MSG))
             iters = int(st.number_input('iterations', 1, 999, 200, help=ITER_MSG))
         st.subheader('Step 3: Compare topics and documents')
-        topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
+        topic = str(st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.'))   # returns numpy_str
+        st.write(MISC_MSG)
         
         # TODO  Let user choose number of wordclouds, docs, and doc height
         
-        st.write(MISC_MSG)
-        # st.write('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n')
-        # st.write(f'App is sluggish? Sorry about that.  \n_Detecting... {WORKER} worker available._')
-        # st.write('Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
-
     
     with left:
-        if topic:
+        st.write(topic, type(topic))
+        if topic != 'None':
             msg.info(f'Displaying top 6 documents related to "{topic}".')
-            _,_,_, topicIDs = t2v_model.query_topics(str(topic), 1)         # topic is actually of type numpy_str which top2vec doesnt accept (but LDA (gensim) does)
+            _,_,_, topicIDs = t2v_model.query_topics(topic, 1)         # topic is actually of type numpy_str which top2vec doesnt accept (but LDA (gensim) does)
             _, docIDs = t2v_model.search_documents_by_keywords([topic], nExample*2, keywords_neg=None, return_documents=False, use_index=False, ef=len(data['data']))
         else:
             msg.info(f'Displaying {nExample*2} unrelated topics and documents.')
             topicIDs, docIDs = range(nExample*2), range(nExample*2)
+            
         create_wordcloud(t2v_model, topicIDs)
         display_doc( [data['data'][i] for i in docIDs] )
                 
@@ -166,7 +162,7 @@ def main():
             patient = st.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
             lda_model, dictionary, corpus = train_LDA(data, nTopic, passes, iters)
            
-            if topic:
+            if topic != 'None:
                 topic_prob = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
                 idx = argmax([p for i,p in topic_prob])
                 topicIDs = [ topic_prob[idx][0] ]
