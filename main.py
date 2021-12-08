@@ -1,11 +1,11 @@
 
-from gensim.models import LdaModel   #, ldamulticore
+from top2vec import Top2Vec as T2V
+from gensim.models import LdaModel 
 from gensim.corpora import Dictionary
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer 
-from top2vec import Top2Vec as T2V
 
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -106,7 +106,7 @@ MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for 
 def main():
     msg = st.empty()
     left, right = st.columns(2)
-    left.header('top2vec'); right.header('LDA')
+    left.header('Top2Vec'); right.header('LDA')
     
     
     avail_data = ['arxiv', 'twitter', 'NYU/nips12raw_str602', 'reddit', 'sklearn20news']
@@ -134,21 +134,19 @@ def main():
     with st.sidebar:
         st.subheader('Step 2: LDA parameters')
         nTopic = int(st.number_input(
-            'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2vec, we recommend {int(nTopic*.7)} for this dataset.'))
+            'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2Vec, we recommend {int(nTopic*.7)} for this dataset.'))
         with st.expander('optional training parameters'):    
             passes = int(st.number_input('passes', 1, 99, 2, help=PASS_MSG))
             iters = int(st.number_input('iterations', 1, 999, 200, help=ITER_MSG))
         st.subheader('Step 3: Compare topics and documents')
         topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
         st.write(MISC_MSG)
-        
-        # TODO  Let user choose n_wordclouds, n_word in wordcloud, n_docs, and doc height
-        
+               
     
     with left:
         if topic:
             msg.info(f'Displaying top 6 documents related to "{topic}".')
-            _,_,_, topicIDs = t2v_model.query_topics(str(topic), 1)         # topic is actually of type numpy_str which top2vec doesnt accept (but LDA (gensim) does)
+            _,_,_, topicIDs = t2v_model.query_topics(str(topic), 1)         # top2vec doesnt accept numpy_str, though LDA (gensim) does
             _, docIDs = t2v_model.search_documents_by_keywords([topic], nExample*2, keywords_neg=None, return_documents=False, use_index=False, ef=len(data['data']))
         else:
             msg.info(f'Displaying {nExample*2} unrelated topics and documents.')
