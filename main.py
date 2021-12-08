@@ -1,7 +1,8 @@
 
-from gensim.models import LdaModel #, ldamulticore
+from gensim.models import LdaModel   #, ldamulticore
 from gensim.corpora import Dictionary
 import nltk
+from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer 
 from top2vec import Top2Vec as T2V
@@ -19,23 +20,30 @@ from sklearn.datasets import fetch_20newsgroups as news
 from os import environ
 
 
-@st.experimental_memo 
-def preprocess(data):
+
+@st.experimental_memo(suppress_st_warning=True)
+def preprocess(data, below=2, above=.5):
     regex, lemma = RegexpTokenizer(r'\w+'), WordNetLemmatizer()
+    en_stop = set(stopwords.words('english'))
+    useful = lambda token: True if token not in en_stop and len(token) > 2 and not token.isnumeric() else False
+    
     docs = [regex.tokenize(doc.lower()) for doc in data]
-    docs = [[token for token in doc if len(token) > 2 and not token.isnumeric()] for doc in docs]
+    docs = [[token for token in doc if useful(token)] for doc in docs]
     #docs = [[lemma.lemmatize(token) for token in doc] for doc in docs]
 
     dictionary = Dictionary(docs)
-    dictionary.filter_extremes(no_below=2, no_above=.5, keep_n=None)
+    before = len(dictionary)
+    dictionary.filter_extremes(no_below=below, no_above=above, keep_n=None)  # keep all
+    if DEBUG: debug_msg.write(f'filter_extremes removed {before} -> {len(dictionary)}')
+    
     corpus = [dictionary.doc2bow(doc) for doc in docs]
     _ = dictionary[0]  # This is only to "load" the dictionary.
     return corpus, dictionary
     
+    
 @st.experimental_memo 
 def train_LDA(data, nTopic, passes, iters):
     corpus, dictionary = preprocess(data['data'])
-#    _ = dictionary[0]  # This is only to "load" the dictionary.
     model = LdaModel(
         corpus, nTopic, dictionary.id2token, chunksize=environ.get('CHUNK', 99999), passes=passes, iterations=iters, update_every=1, 
         alpha='auto', eta='auto', minimum_probability=0, eval_every=None
@@ -50,12 +58,13 @@ def calc_relevance(corpus, wordID):
 
 
 @st.experimental_memo  #@st.cache(allow_output_mutation=True)
-def train_t2v(data, speed='learn'):
+def train_t2v(data):
     if data['name'] == 'sklearn20news':
         return T2V.load('models/20news.model')
     else:
-        return T2V(documents=data['data'], speed=speed, min_count=9, keep_documents=False, workers=environ.get('NUMBER_OF_PROCESSORS', 1))
+        return T2V(data['data'], min_count=9, keep_documents=False, workers=environ.get('NUMBER_OF_PROCESSORS', 1))
 
+    
 @st.experimental_memo  #@st.cache(allow_output_mutation=True)
 def retrieve(dataset, fromDate=None, toDate=None):    
     if dataset == 'sklearn20news':
@@ -67,40 +76,34 @@ def _create_wordcloud(word_prob):
     wc = WordCloud(width=1600, height=400, background_color='black')
     return wc.generate_from_frequencies(dict(word_prob)).to_array()
 
-def create_wordcloud(model, topicIDs, nWords=30):
+def create_wordcloud(model, topicIDs, nWords=22):
     with st.container():
         for topicID in topicIDs:
             if type(model) is LdaModel:
                 word_prob = model.show_topic(topicID, nWords)
             elif type(model) is T2V:
                 word_prob = zip(
-                    model.topic_words[topicID], 
-                    softmax(model.topic_word_scores[topicID])
+                    model.topic_words[topicID][:nWords], 
+                    softmax(model.topic_word_scores[topicID][:nWords])
                 )
             st.image(_create_wordcloud(word_prob))
-
     
 def display_doc(docs):
     for doc in docs:
         doc = doc.strip()
         n = doc.count('\n') * 30  # pixels per line
-        st.text_area('', doc, height=500 if n > 500 else n, key=random())
+        st.text_area('', doc, height=400 if n > 400 else n, key=random(), help='You can adjust the text display by dragging from the bottom-right corner.')
     
 
 WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 1), environ.get('CHUNK', 99999)    
 PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch.  \nHigher number may improve model by facilitating convergence for small corpora at the cost of computation time.'
 ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve model by fascilitating document convergence at the cost of computation time.'
-# MISC_MSG = f'''_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600** \n- - -\n
-# App is sluggish? Sorry about that.  \n_Detecting... {WORKER} worker available._  
-# Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)'''
 MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
            f'App feels sluggish? Sorry about that.  \n_... Detecting ... {WORKER} worker available._  \n\n'
             'Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
 
 
 def main():
-    st.set_page_config('CS410 Project', layout="wide")
-    st.title('Compare Topic Modeling Algorithms')
     msg = st.empty()
     left, right = st.columns(2)
     left.header('top2vec'); right.header('LDA')
@@ -119,7 +122,7 @@ def main():
 
     t2v_model = train_t2v(data)
     
-    nTopic = t2v_model.get_num_topics()    
+    nTopic = t2v_model.get_num_topics()
     topics, _, __ = t2v_model.get_topics(nTopic//2)
     topic_words = [None] + [words[0] for words in topics if len(words[0])>2] 
     DEFAULT_EXAMPLE = 3
@@ -139,7 +142,7 @@ def main():
         topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
         st.write(MISC_MSG)
         
-        # TODO  Let user choose number of wordclouds, docs, and doc height
+        # TODO  Let user choose n_wordclouds, n_word in wordcloud, n_docs, and doc height
         
     
     with left:
@@ -153,12 +156,14 @@ def main():
             
         create_wordcloud(t2v_model, topicIDs)
         display_doc( [data['data'][i] for i in docIDs] )
-                
+
     
-    if nTopic:
-        with right:
+    with right:
+        if nTopic:
             patient = st.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
             lda_model, dictionary, corpus = train_LDA(data, nTopic, passes, iters)
+            patient.empty()
+            if DEBUG: debug_msg.write(f'all topic words exist in LDA dict {all([True for word in topic_words if word in dictionary])}')
            
             if topic:
                 topic_prob = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
@@ -170,7 +175,7 @@ def main():
                 docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first                
             else:
                 topicIDs, docIDs = range(nExample*2), range(nExample*2, nExample*4)
-            patient.empty()
+            
             
             create_wordcloud(lda_model, topicIDs)
             display_doc( [data['data'][i] for i in docIDs] )        
@@ -179,6 +184,14 @@ def main():
 
 if __name__ == '__main__':
     #nltk.download('wordnet')
+    #nltk.download('stopwords')
+    
+    st.set_page_config('CS410 Project', layout="wide")
+    st.title('Compare Topic Modeling Algorithms')
+    
+    DEBUG = False
+    if DEBUG:
+        debug_msg = st.container()
     
     main()
     
