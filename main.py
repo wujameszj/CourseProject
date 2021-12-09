@@ -57,7 +57,7 @@ def calc_relevance(corpus, wordID):
     ])
 
 
-@st.experimental_memo  #@st.cache(allow_output_mutation=True)
+@st.experimental_memo  
 def train_t2v(data):
     if data['name'] == 'sklearn20news':
         return T2V.load('models/20news.model')
@@ -65,7 +65,7 @@ def train_t2v(data):
         return T2V(data['data'], min_count=9, keep_documents=False, workers=environ.get('NUMBER_OF_PROCESSORS', 1))
 
     
-@st.experimental_memo  #@st.cache(allow_output_mutation=True)
+@st.experimental_memo  
 def retrieve(dataset, fromDate=None, toDate=None):    
     if dataset == 'sklearn20news':
         return news(subset='all', remove=('headers', 'footers', 'quotes')).data
@@ -109,7 +109,7 @@ def main():
     left.header('Top2Vec'); right.header('LDA')
     
     
-    avail_data = ['arxiv', 'twitter', 'NYU/nips12raw_str602', 'reddit', 'sklearn20news']
+    avail_data = ['arxiv (in development)', 'twitter (in development)', 'reddit (in development)', 'sklearn20news']
     with st.sidebar:
         st.subheader('Step 1:')
         dataset = st.selectbox('dataset', avail_data, index=4, help='Choose dataset to perform topic modeling')
@@ -128,8 +128,6 @@ def main():
     DEFAULT_EXAMPLE = 3
     nExample = DEFAULT_EXAMPLE if DEFAULT_EXAMPLE < nTopic else nTopic 
     
-    # TODO  Check if topics exists in LDA dictionary;  lemmatize topics so that LDA input can also be lemmatized which could improve model quality
-    #       Calculate bigrams and trigrams
 
     with st.sidebar:
         st.subheader('Step 2: LDA parameters')

@@ -23,17 +23,16 @@ Currently supported algorithms are LDA and Top2Vec.  The former is implemented v
 
 The app has two components: 
 - a sidebar for user input and control parameters
-  - choose dataset
-  - set number of topics and other parameters for LDA (Top2Vec does not require users to specify any parameter)
-  - search topic models with a keyword
+  1. choose dataset
+  2. set number of topics and other parameters for LDA (Top2Vec does not require users to specify any parameter)
+  3. search topic models with a keyword
 - the main pane for displaying results
   - each algorithm has a dedicated column, lined up side-by-side for ease of comparison
   - topics are shown via wordclouds, where word size corresponds to term weight
-  - documents returned from keyword search are displayed in height-adjustable text boxes
+  - documents returned from keyword search are displayed in height-adjustable boxes
 
 
 ## Reflection and Future Work
-
 
 Although many features were planned for this app, a decision was made to make the first version simple, not overly cluttered with dozens of parameters and customization options. 
 
