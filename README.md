@@ -1,7 +1,7 @@
 # CourseProject 
 
 The goal of this project is to develop a means of easily comparing various topic modeling methods, such as [LDA](https://www.jmlr.org/papers/volume3/blei03a/blei03a.pdf) and [Top2Vec](https://arxiv.org/abs/2008.09470).  
-This was implemented through a [Streamlit](https://streamlit.io) web app hosted [here](https://share.streamlit.io/wujameszj/courseproject/main/main.py).  
+This was implemented through a web app hosted [here](https://share.streamlit.io/wujameszj/courseproject/main/main.py).  
 A demo video is available [here]().
 
 ![](data/windows-2pass500it120topic-short.PNG)
@@ -9,36 +9,44 @@ A demo video is available [here]().
 
 ## Install
 
-The online web app has limited CPU and RAM resources.  
+The web app instance hosted online has limited CPU and RAM resources.  
 For heavy testing, it is recommended to run this app locally.  
 
-1. Create a new conda env, preferably with python=3.8 for compatibility
+1. Set up your environment `conda create -n myapp python=3.8` and `conda activate myapp`
 1. Clone this repo and switch to project directory
 1. Install dependencies `pip install -r requirements.txt`
-1. Launch app in browser via `streamlit run main.py`  
+1. Launch app in browser `streamlit run main.py`  
 
 
-## Implementation
+## Usage
+
+Currently algorithms are LDA and Top2Vec.  The former is implemented via [gensim](https://radimrehurek.com/gensim/auto_examples/tutorials/run_lda.html) while the latter via [top2vec](https://github.com/ddangelov/Top2Vec).  Both Python packages are available via pip.
 
 The app has two components: 
-1. a sidebar for user input and control parameters; and 
-2. the main pane which displays the result of various topic modeling algorithms.
+- a sidebar for user input and control parameters
+  - choose dataset
+  - set number of topics and other parameters for LDA (Top2Vec does not require users to specify any parameter)
+  - search topic models with a keyword
+- the main pane for displaying the results
+  - each algorithm has a dedicated column, lined up side-by-side for ease of comparison
+  - topics are shown via wordclouds, where word size corresponds to term weight
+  - documents returned from keyword search are displayed in height-adjustable text boxes
 
-In the main pane, each algorithm has a dedicated column for displaying its results.  The columns are lined up side-by-side for ease of comparison.  
-The topics produced by the algorithms are shown via wordclouds, where word size corresponds to term weight.  The documents returned by a keyword search are displayed in height-adjustable text boxes below the wordclouds.
 
-[] (https://radimrehurek.com/gensim/auto_examples/tutorials/run_lda.html)
+## Reflection and Future Work
 
-(https://github.com/ddangelov/Top2Vec)[
+Although many features were planned for this app, a decision was made to make the first version simple, not overly cluttered with dozens of parameters and customization options. 
 
-
-## Future work
-
+Ideas for future releases:
 - expand available datasets for testing
+  - load dataset from local directory or URL
+  - scrape sites such as wikipedia and reddit based on user-defined timeframe and/or theme
 - phrase/multi-term search
-- more parameters for fine-tuning models
+- show and compare time taken to train topic models and perform search 
 - add options for lemmatization and word n-grams in vocabulary
-- add more algorithms for comparison
+- add more algorithms for comparison  
+  
+- provide users to more parameters for fine-tuning models
 - offer customizable result display:
   - number of documents to show
   - default height of document display box

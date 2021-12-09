@@ -136,8 +136,8 @@ def main():
         nTopic = int(st.number_input(
             'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2Vec, we recommend {int(nTopic*.7)} for this dataset.'))
         with st.expander('optional training parameters'):    
-            passes = int(st.number_input('passes', 1, 99, 2, help=PASS_MSG))
-            iters = int(st.number_input('iterations', 1, 999, 200, help=ITER_MSG))
+            passes = int(st.number_input('passes', 1, 99, 1, help=PASS_MSG))
+            iters = int(st.number_input('iterations', 1, 999, 20, help=ITER_MSG))
         st.subheader('Step 3: Compare topics and documents')
         topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
         st.write(MISC_MSG)
