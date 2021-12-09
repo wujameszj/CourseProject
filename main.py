@@ -109,7 +109,7 @@ def main():
     left.header('Top2Vec'); right.header('LDA')
     
     
-    avail_data = ['arxiv (in development)', 'twitter (in development)', 'reddit (in development)', 'sklearn20news']
+    avail_data = ['arxiv (in development)', 'wikipedia (in development)', 'reddit (in development)', 'sklearn20news']
     with st.sidebar:
         st.subheader('Step 1:')
         dataset = st.selectbox('dataset', avail_data, index=3, help='Choose dataset to perform topic modeling')

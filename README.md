@@ -19,17 +19,17 @@ For heavy testing, it is recommended to run this app locally.
 
 ## Usage
 
-Currently supported algorithms are LDA and Top2Vec.  The former is implemented via [gensim](https://radimrehurek.com/gensim/auto_examples/tutorials/run_lda.html) while the latter via [top2vec](https://github.com/ddangelov/Top2Vec).  Both Python packages are available via pip.
-
 The app has two components: 
 - a sidebar for user input and control parameters
   1. choose dataset
-  2. set number of topics and other parameters for LDA (Top2Vec does not require users to specify any parameter)
+  2. set number of topics and other parameters
   3. search topic models with a keyword
 - the main pane for displaying results
   - each algorithm has a dedicated column, lined up side-by-side for ease of comparison
   - topics are shown via wordclouds, where word size corresponds to term weight
   - documents returned from keyword search are displayed in height-adjustable boxes
+
+Currently supported algorithms are LDA and Top2Vec.  A simplified overview and comparison of the two is available in this tech review [note](https://github.com/wujameszj/tech_review/blob/main/techreview.pdf).
 
 
 ## Reflection and Future Work
@@ -51,3 +51,8 @@ Ideas for future releases:
   - default height of document display box
   - number of wordclouds
   - number of words per wordcloud
+
+
+## Reference
+
+LDA is implemented via [gensim](https://radimrehurek.com/gensim/auto_examples/tutorials/run_lda.html) while Top2Vec via [top2vec](https://github.com/ddangelov/Top2Vec).  Both Python packages are available via pip.
