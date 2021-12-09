@@ -112,7 +112,7 @@ def main():
     avail_data = ['arxiv (in development)', 'twitter (in development)', 'reddit (in development)', 'sklearn20news']
     with st.sidebar:
         st.subheader('Step 1:')
-        dataset = st.selectbox('dataset', avail_data, index=4, help='Choose dataset to perform topic modeling')
+        dataset = st.selectbox('dataset', avail_data, index=3, help='Choose dataset to perform topic modeling')
         if dataset == 'arxiv':
             fromdate = st.date_input('from date')
             start = st.time_input('time')
