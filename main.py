@@ -174,7 +174,6 @@ def main():
             else:
                 topicIDs, docIDs = range(nExample*2), range(nExample*2, nExample*4)
             
-            
             create_wordcloud(lda_model, topicIDs)
             display_doc( [data['data'][i] for i in docIDs] )        
 

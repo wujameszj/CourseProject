@@ -1,8 +1,7 @@
 # CourseProject 
 
-The goal of this project is to develop a means of easily comparing various topic modeling methods, such as [LDA](https://www.jmlr.org/papers/volume3/blei03a/blei03a.pdf) and [Top2Vec](https://arxiv.org/abs/2008.09470).  
-This was implemented through a web app hosted [here](https://share.streamlit.io/wujameszj/courseproject/main/main.py).  
-A demo video is available [here]().
+The goal of this project is to develop a means of easily comparing topic modeling methods, such as [LDA](https://www.jmlr.org/papers/volume3/blei03a/blei03a.pdf) and [Top2Vec](https://arxiv.org/abs/2008.09470).  
+This was implemented through a web app hosted [here](https://share.streamlit.io/wujameszj/courseproject/main/main.py).  A demo video is available [here](https://youtu.be/3oj7M-j5vPs).
 
 ![](data/windows-2pass500it120topic-short.PNG)
 
@@ -20,20 +19,21 @@ For heavy testing, it is recommended to run this app locally.
 
 ## Usage
 
-Currently algorithms are LDA and Top2Vec.  The former is implemented via [gensim](https://radimrehurek.com/gensim/auto_examples/tutorials/run_lda.html) while the latter via [top2vec](https://github.com/ddangelov/Top2Vec).  Both Python packages are available via pip.
+Currently supported algorithms are LDA and Top2Vec.  The former is implemented via [gensim](https://radimrehurek.com/gensim/auto_examples/tutorials/run_lda.html) while the latter via [top2vec](https://github.com/ddangelov/Top2Vec).  Both Python packages are available via pip.
 
 The app has two components: 
 - a sidebar for user input and control parameters
   - choose dataset
   - set number of topics and other parameters for LDA (Top2Vec does not require users to specify any parameter)
   - search topic models with a keyword
-- the main pane for displaying the results
+- the main pane for displaying results
   - each algorithm has a dedicated column, lined up side-by-side for ease of comparison
   - topics are shown via wordclouds, where word size corresponds to term weight
   - documents returned from keyword search are displayed in height-adjustable text boxes
 
 
 ## Reflection and Future Work
+
 
 Although many features were planned for this app, a decision was made to make the first version simple, not overly cluttered with dozens of parameters and customization options. 
 
