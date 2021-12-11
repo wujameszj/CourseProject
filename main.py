@@ -1,60 +1,22 @@
 
 from top2vec import Top2Vec as T2V
 from gensim.models import LdaModel 
-from gensim.corpora import Dictionary
 import nltk
 from nltk.corpus import stopwords
-from nltk.tokenize import RegexpTokenizer
-from nltk.stem.wordnet import WordNetLemmatizer 
 
 import streamlit as st
-from wordcloud import WordCloud
 
 from numpy import array, argmax, argpartition as argp, argsort
-from numpy.random import random
 from pandas import DataFrame as DF
 from sklearn.datasets import fetch_20newsgroups as news
 
 from os import environ
 from datetime import date, timedelta
 #from util.scraper import scrape
+from util.lda import calc_relevance, preprocess, train_LDA
+#from util.lda import *
+from util.display import create_wordcloud, display_doc
 
-
-
-@st.experimental_memo(suppress_st_warning=True)
-def preprocess(data, below=2, above=.5):
-    regex, lemma = RegexpTokenizer(r'\w+'), WordNetLemmatizer()
-    en_stop = set(stopwords.words('english'))
-    useful = lambda token: True if token not in en_stop and len(token) > 2 and not token.isnumeric() else False
-    
-    docs = [regex.tokenize(doc.lower()) for doc in data]
-    docs = [[token for token in doc if useful(token)] for doc in docs]
-    #docs = [[lemma.lemmatize(token) for token in doc] for doc in docs]
-
-    dictionary = Dictionary(docs)
-    before = len(dictionary)
-    dictionary.filter_extremes(no_below=below, no_above=above, keep_n=None)  # keep all
-#    if DEBUG: debug_msg.write(f'filter_extremes removed {before} -> {len(dictionary)}')
-    
-    corpus = [dictionary.doc2bow(doc) for doc in docs]
-    _ = dictionary[0]  # This is only to "load" the dictionary.
-    return corpus, dictionary
-    
-    
-@st.experimental_memo 
-def train_LDA(data, nTopic, passes, iters):
-    corpus, dictionary = preprocess(data['data'])
-    model = LdaModel(
-        corpus, nTopic, dictionary.id2token, chunksize=environ.get('CHUNK', 99999), passes=passes, iterations=iters, update_every=1, 
-        alpha='auto', eta='auto', minimum_probability=0, eval_every=None
-    ) 
-    return model, list(dictionary.values()), corpus
-
-@st.experimental_memo
-def calc_relevance(corpus, wordID):
-    return array([
-        sum( [n if i==wordID else 0 for i,n in doc] ) for doc in corpus
-    ])
 
 
 @st.experimental_memo  
@@ -66,35 +28,11 @@ def train_t2v(data):
 
     
 @st.experimental_memo  
-def retrieve(dataset, fromDate=None, toDate=None):    
+def retrieve(dataset):    
     if dataset == 'sklearn20news':
-        return news(subset='all', remove=('headers', 'footers', 'quotes')).data
+        return news(subset='all', remove=('headers','footers','quotes')).data
     
    
-@st.experimental_memo
-def _create_wordcloud(word_prob):
-    wc = WordCloud(width=1600, height=400, background_color='black')
-    return wc.generate_from_frequencies(dict(word_prob)).to_array()
-
-def create_wordcloud(model, topicIDs, nWords=22):
-    with st.container():
-        for topicID in topicIDs:
-            if type(model) is LdaModel:
-                word_prob = model.show_topic(topicID, nWords)
-            elif type(model) is T2V:
-                word_prob = zip(
-                    model.topic_words[topicID][:nWords], 
-                    model.topic_word_scores[topicID][:nWords]
-                )
-            st.image(_create_wordcloud(word_prob))
-    
-def display_doc(docs):
-    for doc in docs:
-        doc = doc.strip()
-        n = doc.count('\n') * 30  # pixels per line
-        st.text_area('', doc, height=400 if n > 400 else n, key=random(), help='You can adjust the text display by dragging from the bottom-right corner.')
-    
-
 WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 1), environ.get('CHUNK', 99999)
 PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch.  \nHigher number may improve model by facilitating convergence for small corpora at the cost of computation time.'
 ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve model by fascilitating document convergence at the cost of computation time.'
