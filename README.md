@@ -26,7 +26,7 @@ The app has two components:
   3. search topic models with a keyword
 - the main pane for displaying results
   - each algorithm has a dedicated column, lined up side-by-side for ease of comparison
-  - topics are shown via wordclouds, where word size corresponds to term weight
+  - topics shown via wordclouds where word size corresponds to term weight
   - documents returned from keyword search are displayed in height-adjustable boxes
 
 Currently supported algorithms are LDA and Top2Vec.  A simplified overview and comparison of the two is available in this tech review [note](https://github.com/wujameszj/tech_review/blob/main/techreview.pdf).

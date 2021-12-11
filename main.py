@@ -8,12 +8,13 @@ import streamlit as st
 from os import environ
 from datetime import date, timedelta
 
+from util.scraper import scrape
 from util.lda import MyLDA
 from util.display import create_wordcloud, display_doc
-#from util.scraper import scrape
 #from util.lda import calc_relevance, train_LDA
 #from util.lda import *
 
+from numpy.random import random
 
 
 @st.experimental_memo  
@@ -21,7 +22,11 @@ def train_t2v(data):
     if data['name'] == 'sklearn20news':
         return T2V.load('models/20news.model')
     else:
-        return T2V(data['data'], min_count=9, keep_documents=False, workers=environ.get('NUMBER_OF_PROCESSORS', 1))
+        return T2V.load('models/20news.model')
+        # return T2V(
+        #     data['data'], min_count=9, keep_documents=False, 
+        #     workers=int(environ.get('NUMBER_OF_PROCESSORS', 1))
+        # )
 
     
 @st.experimental_memo  
@@ -44,11 +49,16 @@ MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for 
 
 def get_data():
     with st.sidebar:
-        st.subheader('Step 1:')
-        dataset = st.selectbox('dataset', AVAIL_DATA, index=0, help='Choose dataset to perform topic modeling')
+        st.subheader('Step 1: Get corpus')
+        dataset = st.selectbox('data source', AVAIL_DATA, index=0, help='Choose dataset to perform topic modeling')
         
         if dataset == 'wikipedia':
-            start, end = st.date_input('Get articles between:', [date.today()-timedelta(days=2), date.today()], date(2018,1,1), date.today(), help=SCRAPE_MSG)
+            dates = []
+#            while len(dates)!=2:
+            dates = st.date_input('Get articles between:', [date.today()-timedelta(days=2), date.today()], date(2018,1,1), date.today(), help=SCRAPE_MSG)
+            
+            st.write(len(dates), dates)
+            start, end = dates
             data = {'name': 'wikipedia', 'data': scrape(start, end)}
         elif dataset == 'sklearn20news':
             data = {'name': 'sklearn20news', 'data': retrieve(dataset)}
@@ -100,7 +110,7 @@ def main():
             topicIDs, docIDs = range(nExample*2), range(nExample*2)
             
         create_wordcloud(t2v_model, topicIDs)
-        display_doc(data, docIDs)
+        #display_doc(data, docIDs)
 
     
     with right:
@@ -126,7 +136,7 @@ if __name__ == '__main__':
     st.set_page_config('CS410 Project', layout="wide")
     st.title('Compare Topic Modeling Algorithms')
     
-    DEBUG = False
+    DEBUG = True
     if DEBUG:
         debug_msg = st.container()
     
