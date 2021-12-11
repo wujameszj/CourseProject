@@ -2,20 +2,17 @@
 from top2vec import Top2Vec as T2V
 from gensim.models import LdaModel 
 import nltk
-from nltk.corpus import stopwords
-
-import streamlit as st
-
-from numpy import array, argmax, argpartition as argp, argsort
 from sklearn.datasets import fetch_20newsgroups as news
+import streamlit as st
 
 from os import environ
 from datetime import date, timedelta
+
+from util.lda import MyLDA
+from util.display import create_wordcloud, display_doc
 #from util.scraper import scrape
 #from util.lda import calc_relevance, train_LDA
-from util.lda import MyLDA
 #from util.lda import *
-from util.display import create_wordcloud, display_doc
 
 
 
@@ -59,7 +56,6 @@ def get_data():
 
 
 def get_param(nTopic):
-    st.subheader('Step 2: LDA parameters')
     nTopic = int(st.number_input(
         'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2Vec, we recommend {int(nTopic*.7)} for this dataset.'))
     with st.expander('optional training parameters'):
@@ -78,15 +74,17 @@ def main():
     
     nTopic = t2v_model.get_num_topics()
     topics, _, __ = t2v_model.get_topics(nTopic//2)
-    topic_words = [None] + [words[0] for words in topics if len(words[0])>2] 
+    
     DEFAULT_EXAMPLE = 3
     nExample = DEFAULT_EXAMPLE if DEFAULT_EXAMPLE < nTopic else nTopic 
     
 
     with st.sidebar:
+        st.subheader('Step 2: LDA parameters')
         nTopic, passes, iters = get_param(nTopic)
             
         st.subheader('Step 3: Compare topics and documents')
+        topic_words = [None] + [words[0] for words in topics if len(words[0])>2] 
         keyword = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
         
         st.write(MISC_MSG)
