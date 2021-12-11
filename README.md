@@ -22,7 +22,7 @@ For heavy testing, it is recommended to run this app locally.
 The app has two components: 
 - a sidebar for user input and control parameters
   1. choose dataset
-  2. set number of topics and other parameters
+  2. set parameters such as number of topics 
   3. search topic models with a keyword
 - the main pane for displaying results
   - each algorithm has a dedicated column, lined up side-by-side for ease of comparison

@@ -8,16 +8,16 @@ from nltk.tokenize import RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer 
 
 import streamlit as st
-import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 
 from numpy import array, argmax, argpartition as argp, argsort
 from numpy.random import random
 from pandas import DataFrame as DF
-from scipy.special import softmax
 from sklearn.datasets import fetch_20newsgroups as news
 
 from os import environ
+from datetime import date, timedelta
+#from util.scraper import scrape
 
 
 
@@ -34,7 +34,7 @@ def preprocess(data, below=2, above=.5):
     dictionary = Dictionary(docs)
     before = len(dictionary)
     dictionary.filter_extremes(no_below=below, no_above=above, keep_n=None)  # keep all
-    if DEBUG: debug_msg.write(f'filter_extremes removed {before} -> {len(dictionary)}')
+#    if DEBUG: debug_msg.write(f'filter_extremes removed {before} -> {len(dictionary)}')
     
     corpus = [dictionary.doc2bow(doc) for doc in docs]
     _ = dictionary[0]  # This is only to "load" the dictionary.
@@ -84,7 +84,7 @@ def create_wordcloud(model, topicIDs, nWords=22):
             elif type(model) is T2V:
                 word_prob = zip(
                     model.topic_words[topicID][:nWords], 
-                    softmax(model.topic_word_scores[topicID][:nWords])
+                    model.topic_word_scores[topicID][:nWords]
                 )
             st.image(_create_wordcloud(word_prob))
     
@@ -95,7 +95,7 @@ def display_doc(docs):
         st.text_area('', doc, height=400 if n > 400 else n, key=random(), help='You can adjust the text display by dragging from the bottom-right corner.')
     
 
-WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 1), environ.get('CHUNK', 99999)    
+WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 1), environ.get('CHUNK', 99999)
 PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch.  \nHigher number may improve model by facilitating convergence for small corpora at the cost of computation time.'
 ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve model by fascilitating document convergence at the cost of computation time.'
 MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
@@ -109,17 +109,20 @@ def main():
     left.header('Top2Vec'); right.header('LDA')
     
     
-    avail_data = ['arxiv (in development)', 'wikipedia (in development)', 'reddit (in development)', 'sklearn20news']
+    avail_data = ['sklearn20news', 'wikipedia', 'arxiv (in development)', 'reddit (in development)']
     with st.sidebar:
         st.subheader('Step 1:')
-        dataset = st.selectbox('dataset', avail_data, index=3, help='Choose dataset to perform topic modeling')
-        if dataset == 'arxiv':
-            fromdate = st.date_input('from date')
-            start = st.time_input('time')
+        dataset = st.selectbox('dataset', avail_data, index=0, help='Choose dataset to perform topic modeling')
+        if dataset == 'wikipedia':
+            start, end = st.date_input(
+                'Get articles between:', [date.today()-timedelta(days=2), date.today()], date(2018,1,1), date.today(),
+                help='Scrape articles on Wikipedia\'s Current Event portal.  \n7-14 days tend to work well, not too few nor too many.'
+            )
+            data = {'name': 'wikipedia', 'data': scrape(start, end)}
         elif dataset == 'sklearn20news':
             data = {'name': 'sklearn20news', 'data': retrieve(dataset)}
 
-
+    
     t2v_model = train_t2v(data)
     
     nTopic = t2v_model.get_num_topics()
