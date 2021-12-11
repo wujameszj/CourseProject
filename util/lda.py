@@ -7,11 +7,45 @@ from gensim.models import LdaModel
 from gensim.corpora import Dictionary
 
 import streamlit as st
-from numpy import array
+from numpy import array, argmax, argpartition as argp, argsort
 
 from os import environ
 
 
+class MyLDA:
+    
+    def __init__(self, data, n, passes, iters):        
+        self.nTopic = n
+        
+        self.corpus, self.dictionary = preprocess(data['data'])
+        self.model = LdaModel(
+            self.corpus, self.nTopic, self.dictionary.id2token, chunksize=environ.get('CHUNK', 99999), 
+            passes=passes, iterations=iters, update_every=1, 
+            alpha='auto', eta='auto', minimum_probability=0, eval_every=None
+        )
+        
+        self.search_dict = list(self.dictionary.values())
+        
+        
+    def relevant_topics_docs(self, word, nExample):
+        topic_prob = self.model.get_term_topics(self.search_dict.index(word), minimum_probability=0)
+        idx = argmax([p for i,p in topic_prob])
+        topicIDs = [ topic_prob[idx][0] ]
+        
+        doc_prob = calc_relevance(self.corpus, self.search_dict.index(word))
+        docIDs = argp(doc_prob, -nExample*2)[-nExample*2:]
+        docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first  
+                
+        return topicIDs, docIDs
+             
+        
+        
+@st.experimental_memo
+def calc_relevance(corpus, wordID):
+    return array([
+        sum([n if i==wordID else 0 for i,n in doc]) for doc in corpus
+    ])
+     
 
 @st.experimental_memo #(suppress_st_warning=True)
 def preprocess(data, below=2, above=.5):
@@ -43,9 +77,5 @@ def train_LDA(data, nTopic, passes, iters):
     return model, list(dictionary.values()), corpus
 
 
-@st.experimental_memo
-def calc_relevance(corpus, wordID):
-    return array([
-        sum( [n if i==wordID else 0 for i,n in doc] ) for doc in corpus
-    ])
+
 

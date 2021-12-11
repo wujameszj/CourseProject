@@ -7,13 +7,13 @@ from nltk.corpus import stopwords
 import streamlit as st
 
 from numpy import array, argmax, argpartition as argp, argsort
-from pandas import DataFrame as DF
 from sklearn.datasets import fetch_20newsgroups as news
 
 from os import environ
 from datetime import date, timedelta
 #from util.scraper import scrape
-from util.lda import calc_relevance, preprocess, train_LDA
+#from util.lda import calc_relevance, train_LDA
+from util.lda import MyLDA
 #from util.lda import *
 from util.display import create_wordcloud, display_doc
 
@@ -78,15 +78,15 @@ def main():
             passes = int(st.number_input('passes', 1, 99, 1, help=PASS_MSG))
             iters = int(st.number_input('iterations', 1, 999, 20, help=ITER_MSG))
         st.subheader('Step 3: Compare topics and documents')
-        topic = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
+        keyword = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
         st.write(MISC_MSG)
                
     
     with left:
-        if topic:
-            msg.info(f'Displaying top 6 documents related to "{topic}".')
-            _,_,_, topicIDs = t2v_model.query_topics(str(topic), 1)         # top2vec doesnt accept numpy_str, though LDA (gensim) does
-            _, docIDs = t2v_model.search_documents_by_keywords([topic], nExample*2, keywords_neg=None, return_documents=False, use_index=False, ef=len(data['data']))
+        if keyword:
+            msg.info(f'Displaying top 6 documents related to "{keyword}".')
+            _,_,_, topicIDs = t2v_model.query_topics(str(keyword), 1)         # top2vec doesnt accept numpy_str, though LDA (gensim) does
+            _, docIDs = t2v_model.search_documents_by_keywords([keyword], nExample*2, return_documents=False, use_index=False, ef=len(data['data']))
         else:
             msg.info(f'Displaying {nExample*2} unrelated topics and documents.')
             topicIDs, docIDs = range(nExample*2), range(nExample*2)
@@ -98,22 +98,23 @@ def main():
     with right:
         if nTopic:
             patient = st.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
-            lda_model, dictionary, corpus = train_LDA(data, nTopic, passes, iters)
+#            lda_model, dictionary, corpus = train_LDA(data, nTopic, passes, iters)
+            lda = MyLDA(data, nTopic, passes, iters)
             patient.empty()
             if DEBUG: debug_msg.write(f'all topic words exist in LDA dict {all([True for word in topic_words if word in dictionary])}')
            
-            if topic:
-                topic_prob = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
-                idx = argmax([p for i,p in topic_prob])
-                topicIDs = [ topic_prob[idx][0] ]
-                
-                doc_prob = calc_relevance(corpus, dictionary.index(topic))
-                docIDs = argp(doc_prob, -nExample*2)[-nExample*2:]
-                docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first                
+            if keyword:
+#                topic_prob = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
+                # idx = argmax([p for i,p in topic_prob])
+                # topicIDs = [ topic_prob[idx][0] ]
+                topicIDs, docIDs = lda.relevant_topics_docs(keyword, nExample)
+                # doc_prob = calc_relevance(corpus, dictionary.index(topic))
+                # docIDs = argp(doc_prob, -nExample*2)[-nExample*2:]
+                # docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first                
             else:
                 topicIDs, docIDs = range(nExample*2), range(nExample*2, nExample*4)
             
-            create_wordcloud(lda_model, topicIDs)
+            create_wordcloud(lda.model, topicIDs)
             display_doc( [data['data'][i] for i in docIDs] )        
 
 
