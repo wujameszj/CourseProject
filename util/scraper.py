@@ -10,29 +10,39 @@ import streamlit as st
 
 #def collect_links(start, end)
 
+
+def dwrite(txt):
+    with open('scrape.log', 'a', encoding='utf-8') as f:
+        f.write(txt+'\n')
+
+
 base = 'https://en.wikipedia.org'
 get_article = lambda url: BS(get(url).content, 'html.parser').get_text().strip().replace('\n', ' ')
 
-#@st.experimental_memo
-def scrape(start, end, mydebug=True, dailyLimit=9999):
-
+@st.experimental_memo
+def get_articles_from(mydate, _soup):
+    _day = _soup.find(attrs={"aria-label": f"{mydate.strftime('%B')} {mydate.day}"})        # use double instead of single quote
+    links = [a.get('href') for a in _day.find_all('a') if a.get('href').startswith('/wiki')]
+    return [get_article(base+link) for link in set(links)]
+    
+    
+#@st.experimental_memo    
+def soup_of(mth, yr):
+    link = f'/wiki/Portal:Current_events/{mth}_{yr}'
+    return BS(get(base+link).content, 'html.parser')
+    
+    
+@st.experimental_memo
+def scrape(start, end, mydebug=True):
     
     articles, newMonth = [], True
-    while(start < end):
-        if mydebug:
-            with open('scrape.log', 'a') as f:
-                f.write(f'processed {start}\n')
-                
-        if newMonth:
-            link = '/wiki/Portal:Current_events/{}_{}'.format(start.strftime('%B'), start.year)
-            monthSoup = BS(get(base+link).content, 'html.parser')
+    while(start <= end):
+        if mydebug: dwrite(f'processing {start}\n')
+
+        if newMonth: 
+            soup = soup_of(start.strftime('%B'), start.year) 
         
-        _day = monthSoup.find(attrs={"aria-label": f"{start.strftime('%B')} {start.day}"})      # use double instead of single quote
-        links = [a.get('href') for a in _day.find_all('a') if a.get('href').startswith('/wiki')]
-        
-        
-        articles += [get_article(base+link) for link in links]
-#        articles += [BS(get(base+link).content, 'html.parser').get_text().strip().replace('\n', ' ') for link in links]
+        articles += get_articles_from(start, soup)
         
         # for link in links[:1]:
         #     soup = BS(get(base+link).content, 'html.parser')
@@ -41,9 +51,12 @@ def scrape(start, end, mydebug=True, dailyLimit=9999):
         start += timedelta(days=1)
         newMonth = True if start.day==1 else False
     
-    st.write(len(articles))
     if mydebug:
-        with open('scrape.log', 'a') as f:
-            f.write(f'Collected {len(articles)} articles\n')
-            f.write(articles[0][:99] + '\n')
+        dwrite(f'Collected {len(articles)} articles\n')
+        [dwrite(ar[:299] + '\n') for ar in articles]
+        
     return articles
+
+
+
+## speed up web scrape through parallelization

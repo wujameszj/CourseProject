@@ -38,7 +38,7 @@ def retrieve(dataset):
 WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 1), environ.get('CHUNK', 99999)
 AVAIL_DATA = ['sklearn20news', 'wikipedia', 'arxiv (in development)', 'reddit (in development)']
 
-SCRAPE_MSG = 'Scrape articles on Wikipedia\'s Current Event portal.  \n7-14 days tend to work well, not too few nor too many.'
+SCRAPE_MSG = 'Scrape articles on Wikipedia\'s Current Event portal.  \nEach day takes 5-10 minutes.'
 PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch.  \nMore may improve model by facilitating convergence for small corpora at the cost of computation time.'
 ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve model by fascilitating document convergence at the cost of computation time.'
 MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
@@ -47,19 +47,17 @@ MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for 
 
 
 
-def get_data():
+def get_data(last_n_days=2):
     with st.sidebar:
         st.subheader('Step 1: Get corpus')
         dataset = st.selectbox('data source', AVAIL_DATA, index=0, help='Choose dataset to perform topic modeling')
         
         if dataset == 'wikipedia':
-            dates = []
-#            while len(dates)!=2:
-            dates = st.date_input('Get articles between:', [date.today()-timedelta(days=2), date.today()], date(2018,1,1), date.today(), help=SCRAPE_MSG)
-            
-            st.write(len(dates), dates)
-            start, end = dates
-            data = {'name': 'wikipedia', 'data': scrape(start, end)}
+            default = [date.today()-timedelta(days=last_n_days), date.today()]
+            dates = st.date_input('Get articles between:', default, date(2018,1,1), date.today(), help=SCRAPE_MSG)
+            if len(dates)==1: return None
+        
+            data = {'name': 'wikipedia', 'data': scrape(*dates)}
         elif dataset == 'sklearn20news':
             data = {'name': 'sklearn20news', 'data': retrieve(dataset)}
     return data
@@ -80,23 +78,24 @@ def main():
     left.header('Top2Vec'); right.header('LDA')
     
     data = get_data()
+    if not data: return        # invalid input; dont load rest of UI until new valid input is received 
     t2v_model = train_t2v(data)
-    
+
     nTopic = t2v_model.get_num_topics()
     topics, _, __ = t2v_model.get_topics(nTopic//2)
-    
+
     DEFAULT_EXAMPLE = 3
     nExample = DEFAULT_EXAMPLE if DEFAULT_EXAMPLE < nTopic else nTopic 
-    
+
 
     with st.sidebar:
         st.subheader('Step 2: LDA parameters')
         nTopic, passes, iters = get_param(nTopic)
-            
+
         st.subheader('Step 3: Compare topics and documents')
         topic_words = [None] + [words[0] for words in topics if len(words[0])>2] 
         keyword = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
-        
+
         st.write(MISC_MSG)
                
     
@@ -136,7 +135,7 @@ if __name__ == '__main__':
     st.set_page_config('CS410 Project', layout="wide")
     st.title('Compare Topic Modeling Algorithms')
     
-    DEBUG = True
+    DEBUG = False
     if DEBUG:
         debug_msg = st.container()
     
