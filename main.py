@@ -31,12 +31,15 @@ def retrieve(dataset):
     
    
 WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 1), environ.get('CHUNK', 99999)
-PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch.  \nHigher number may improve model by facilitating convergence for small corpora at the cost of computation time.'
+AVAIL_DATA = ['sklearn20news', 'wikipedia', 'arxiv (in development)', 'reddit (in development)']
+
+SCRAPE_MSG = 'Scrape articles on Wikipedia\'s Current Event portal.  \n7-14 days tend to work well, not too few nor too many.'
+PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch.  \nMore may improve model by facilitating convergence for small corpora at the cost of computation time.'
 ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve model by fascilitating document convergence at the cost of computation time.'
 MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
            f'App feels sluggish? Sorry about that.  \n_... Detecting ... {WORKER} worker available._  \n\n'
             'Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
-AVAIL_DATA = ['sklearn20news', 'wikipedia', 'arxiv (in development)', 'reddit (in development)']
+
 
 
 def get_data():
@@ -45,10 +48,7 @@ def get_data():
         dataset = st.selectbox('dataset', AVAIL_DATA, index=0, help='Choose dataset to perform topic modeling')
         
         if dataset == 'wikipedia':
-            start, end = st.date_input(
-                'Get articles between:', [date.today()-timedelta(days=2), date.today()], date(2018,1,1), date.today(),
-                help='Scrape articles on Wikipedia\'s Current Event portal.  \n7-14 days tend to work well, not too few nor too many.'
-            )
+            start, end = st.date_input('Get articles between:', [date.today()-timedelta(days=2), date.today()], date(2018,1,1), date.today(), help=SCRAPE_MSG)
             data = {'name': 'wikipedia', 'data': scrape(start, end)}
         elif dataset == 'sklearn20news':
             data = {'name': 'sklearn20news', 'data': retrieve(dataset)}
