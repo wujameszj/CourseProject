@@ -39,18 +39,14 @@ ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve
 MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
            f'App feels sluggish? Sorry about that.  \n_... Detecting ... {WORKER} worker available._  \n\n'
             'Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
+AVAIL_DATA = ['sklearn20news', 'wikipedia', 'arxiv (in development)', 'reddit (in development)']
 
 
-def main():
-    msg = st.empty()
-    left, right = st.columns(2)
-    left.header('Top2Vec'); right.header('LDA')
-    
-    
-    avail_data = ['sklearn20news', 'wikipedia', 'arxiv (in development)', 'reddit (in development)']
+def get_data():
     with st.sidebar:
         st.subheader('Step 1:')
-        dataset = st.selectbox('dataset', avail_data, index=0, help='Choose dataset to perform topic modeling')
+        dataset = st.selectbox('dataset', AVAIL_DATA, index=0, help='Choose dataset to perform topic modeling')
+        
         if dataset == 'wikipedia':
             start, end = st.date_input(
                 'Get articles between:', [date.today()-timedelta(days=2), date.today()], date(2018,1,1), date.today(),
@@ -59,8 +55,25 @@ def main():
             data = {'name': 'wikipedia', 'data': scrape(start, end)}
         elif dataset == 'sklearn20news':
             data = {'name': 'sklearn20news', 'data': retrieve(dataset)}
+    return data
 
+
+def get_param(nTopic):
+    st.subheader('Step 2: LDA parameters')
+    nTopic = int(st.number_input(
+        'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2Vec, we recommend {int(nTopic*.7)} for this dataset.'))
+    with st.expander('optional training parameters'):
+        passes = int(st.number_input('passes', 1, 99, 1, help=PASS_MSG))
+        iters = int(st.number_input('iterations', 1, 999, 20, help=ITER_MSG))    
+    return nTopic, passes, iters
+
+
+def main():
+    msg = st.empty()
+    left, right = st.columns(2)
+    left.header('Top2Vec'); right.header('LDA')
     
+    data = get_data()
     t2v_model = train_t2v(data)
     
     nTopic = t2v_model.get_num_topics()
@@ -71,14 +84,11 @@ def main():
     
 
     with st.sidebar:
-        st.subheader('Step 2: LDA parameters')
-        nTopic = int(st.number_input(
-            'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2Vec, we recommend {int(nTopic*.7)} for this dataset.'))
-        with st.expander('optional training parameters'):    
-            passes = int(st.number_input('passes', 1, 99, 1, help=PASS_MSG))
-            iters = int(st.number_input('iterations', 1, 999, 20, help=ITER_MSG))
+        nTopic, passes, iters = get_param(nTopic)
+            
         st.subheader('Step 3: Compare topics and documents')
         keyword = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
+        
         st.write(MISC_MSG)
                
     
@@ -86,36 +96,28 @@ def main():
         if keyword:
             msg.info(f'Displaying top 6 documents related to "{keyword}".')
             _,_,_, topicIDs = t2v_model.query_topics(str(keyword), 1)         # top2vec doesnt accept numpy_str, though LDA (gensim) does
-            _, docIDs = t2v_model.search_documents_by_keywords([keyword], nExample*2, return_documents=False, use_index=False, ef=len(data['data']))
+            _, docIDs = t2v_model.search_documents_by_keywords([keyword], nExample*2, return_documents=False, ef=len(data['data']))
         else:
-            msg.info(f'Displaying {nExample*2} unrelated topics and documents.')
+            msg.info(f'Displaying {nExample*2} topics and documents.')
             topicIDs, docIDs = range(nExample*2), range(nExample*2)
             
         create_wordcloud(t2v_model, topicIDs)
-        display_doc( [data['data'][i] for i in docIDs] )
+        display_doc(data, docIDs)
 
     
     with right:
         if nTopic:
             patient = st.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
-#            lda_model, dictionary, corpus = train_LDA(data, nTopic, passes, iters)
-            lda = MyLDA(data, nTopic, passes, iters)
-            patient.empty()
-            if DEBUG: debug_msg.write(f'all topic words exist in LDA dict {all([True for word in topic_words if word in dictionary])}')
+            lda = MyLDA(data, nTopic, passes, iters);  patient.empty()
+#            if DEBUG: debug_msg.write(f'all topic words exist in LDA dict {all([True for word in topic_words if word in dictionary])}')
            
             if keyword:
-#                topic_prob = lda_model.get_term_topics(dictionary.index(topic), minimum_probability=0)
-                # idx = argmax([p for i,p in topic_prob])
-                # topicIDs = [ topic_prob[idx][0] ]
-                topicIDs, docIDs = lda.relevant_topics_docs(keyword, nExample)
-                # doc_prob = calc_relevance(corpus, dictionary.index(topic))
-                # docIDs = argp(doc_prob, -nExample*2)[-nExample*2:]
-                # docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first                
+                topicIDs, docIDs = lda.relevant_topics_docs(keyword, nExample)              
             else:
                 topicIDs, docIDs = range(nExample*2), range(nExample*2, nExample*4)
             
             create_wordcloud(lda.model, topicIDs)
-            display_doc( [data['data'][i] for i in docIDs] )        
+            display_doc(data, docIDs)        
 
 
 
