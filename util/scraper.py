@@ -1,14 +1,9 @@
 from bs4 import BeautifulSoup as BS
-#import re 
 from requests import get 
 from datetime import date, timedelta
 
 import streamlit as st
 
-
-
-
-#def collect_links(start, end)
 
 
 def dwrite(txt):
@@ -17,7 +12,7 @@ def dwrite(txt):
 
 
 base = 'https://en.wikipedia.org'
-get_article = lambda url: BS(get(url).content, 'html.parser').get_text().strip().replace('\n', ' ')
+get_article = lambda url: BS(get(url).content, 'html.parser').get_text().strip()
 
 @st.experimental_memo
 def get_articles_from(mydate, _soup):
@@ -53,7 +48,7 @@ def scrape(start, end, mydebug=True):
     
     if mydebug:
         dwrite(f'Collected {len(articles)} articles\n')
-        [dwrite(ar[:299] + '\n') for ar in articles]
+        [dwrite(ar[:299] + '\n') for ar in articles[:2]]
         
     return articles
 

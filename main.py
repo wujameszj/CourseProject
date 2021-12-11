@@ -1,5 +1,5 @@
 
-from top2vec import Top2Vec as T2V
+from top2vec import Top2Vec
 from gensim.models import LdaModel 
 import nltk
 from sklearn.datasets import fetch_20newsgroups as news
@@ -11,22 +11,19 @@ from datetime import date, timedelta
 from util.scraper import scrape
 from util.lda import MyLDA
 from util.display import create_wordcloud, display_doc
-#from util.lda import calc_relevance, train_LDA
-#from util.lda import *
 
-from numpy.random import random
 
 
 @st.experimental_memo  
-def train_t2v(data):
+def train_top2vec(data):
     if data['name'] == 'sklearn20news':
-        return T2V.load('models/20news.model')
+        return Top2Vec.load('models/20news.model')
     else:
-        return T2V.load('models/20news.model')
-        # return T2V(
-        #     data['data'], min_count=9, keep_documents=False, 
-        #     workers=int(environ.get('NUMBER_OF_PROCESSORS', 1))
-        # )
+        #return Top2Vec.load('models/20news.model')
+        return Top2Vec(
+            data['data'], min_count=9, keep_documents=False, 
+            workers=int(environ.get('NUMBER_OF_PROCESSORS', 1))
+        )
 
     
 @st.experimental_memo  
@@ -35,41 +32,48 @@ def retrieve(dataset):
         return news(subset='all', remove=('headers','footers','quotes')).data
     
    
-WORKER, CHUNKSIZE = environ.get('NUMBER_OF_PROCESSORS', 1), environ.get('CHUNK', 99999)
 AVAIL_DATA = ['sklearn20news', 'wikipedia', 'arxiv (in development)', 'reddit (in development)']
 
-SCRAPE_MSG = 'Scrape articles on Wikipedia\'s Current Event portal.  \nEach day takes 5-10 minutes.'
+DATA_MSG = 'The app is optimized for the Sklearn dataset.  \nOther options allow you to build a custom dataset for testing but tend to take a long time.  \n'
+SCRAPE_MSG = "See what's trending on Wikipedia's Current Event portal.  \nEach day takes 3-5 minutes to scrape and increases model training time by roughly 1.2 times."
 PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch.  \nMore may improve model by facilitating convergence for small corpora at the cost of computation time.'
 ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve model by fascilitating document convergence at the cost of computation time.'
 MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
-           f'App feels sluggish? Sorry about that.  \n_... Detecting ... {WORKER} worker available._  \n\n'
+           f"App feels sluggish? Sorry about that.  \n_... Detecting ... {environ.get('NUMBER_OF_PROCESSORS', 1)} worker available._  \n\n"
             'Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
 
 
 
 def get_data(last_n_days=2):
     with st.sidebar:
-        st.subheader('Step 1: Get corpus')
-        dataset = st.selectbox('data source', AVAIL_DATA, index=0, help='Choose dataset to perform topic modeling')
+        st.subheader('Step 1: Choose dataset')
+        dataset = st.selectbox('data source', AVAIL_DATA, index=0, help=DATA_MSG)
         
         if dataset == 'wikipedia':
             default = [date.today()-timedelta(days=last_n_days), date.today()]
             dates = st.date_input('Get articles between:', default, date(2018,1,1), date.today(), help=SCRAPE_MSG)
             if len(dates)==1: return None
-        
-            data = {'name': 'wikipedia', 'data': scrape(*dates)}
+            
+            art = scrape(*dates)
+            st.write(f'_Retrieved {len(art)} articles_')
+            data = {'name': 'wikipedia', 'data': art}
         elif dataset == 'sklearn20news':
             data = {'name': 'sklearn20news', 'data': retrieve(dataset)}
     return data
 
 
-def get_param(nTopic):
+def get_param(t2v_nTopic):
     nTopic = int(st.number_input(
-        'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2Vec, we recommend {int(nTopic*.7)} for this dataset.'))
+        'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2Vec, we recommend {t2v_nTopic} for this dataset.'))
     with st.expander('optional training parameters'):
         passes = int(st.number_input('passes', 1, 99, 1, help=PASS_MSG))
         iters = int(st.number_input('iterations', 1, 999, 20, help=ITER_MSG))    
     return nTopic, passes, iters
+
+
+@st.experimental_memo
+def _filter(topics):
+    return [None] + [words[0] for words in topics if len(words[0])>2] 
 
 
 def main():
@@ -78,44 +82,46 @@ def main():
     left.header('Top2Vec'); right.header('LDA')
     
     data = get_data()
-    if not data: return        # invalid input; dont load rest of UI until new valid input is received 
-    t2v_model = train_t2v(data)
+    if not data: return   # invalid input; dont load rest of UI until new valid input is received 
 
-    nTopic = t2v_model.get_num_topics()
-    topics, _, __ = t2v_model.get_topics(nTopic//2)
 
-    DEFAULT_EXAMPLE = 3
-    nExample = DEFAULT_EXAMPLE if DEFAULT_EXAMPLE < nTopic else nTopic 
+    with left:
+        t2v_model = train_top2vec(data)
+
+    t2v_nTopic = t2v_model.get_num_topics()
+    topics, _, __ = t2v_model.get_topics()
 
 
     with st.sidebar:
         st.subheader('Step 2: LDA parameters')
-        nTopic, passes, iters = get_param(nTopic)
+        lda_nTopic, passes, iters = get_param(t2v_nTopic)
 
         st.subheader('Step 3: Compare topics and documents')
-        topic_words = [None] + [words[0] for words in topics if len(words[0])>2] 
-        keyword = st.selectbox('search by keyword', topic_words, help='This list consists of likely topic words in this dataset.')   # returns numpy_str
+        keyword = st.selectbox('search by keyword', _filter(topics), help='This list consists of likely topic words in this dataset.')   # returns numpy_str
 
         st.write(MISC_MSG)
                
     
+    DEFAULT_EXAMPLE = 6
     with left:
         if keyword:
-            msg.info(f'Displaying top 6 documents related to "{keyword}".')
-            _,_,_, topicIDs = t2v_model.query_topics(str(keyword), 1)         # top2vec doesnt accept numpy_str, though LDA (gensim) does
-            _, docIDs = t2v_model.search_documents_by_keywords([keyword], nExample*2, return_documents=False, ef=len(data['data']))
+            nWordcloud, nDoc = 1, min(DEFAULT_EXAMPLE, t2v_nTopic)
+            _,_,_, topicIDs = t2v_model.query_topics(str(keyword), nWordcloud)         # top2vec doesnt accept numpy_str, though LDA (gensim) does
+            _, docIDs = t2v_model.search_documents_by_keywords([keyword], nDoc, return_documents=False, ef=len(data['data']))
+            msg.info(f'Displaying top {nDoc} documents related to "{keyword}".')
         else:
-            msg.info(f'Displaying {nExample*2} topics and documents.')
-            topicIDs, docIDs = range(nExample*2), range(nExample*2)
+            nWordcloud = min(DEFAULT_EXAMPLE, t2v_nTopic)
+            topicIDs, docIDs = range(nWordcloud), range(DEFAULT_EXAMPLE)
+            msg.info(f'Displaying {DEFAULT_EXAMPLE} topics and documents.')
             
         create_wordcloud(t2v_model, topicIDs)
-        #display_doc(data, docIDs)
+        display_doc(data, docIDs)
 
     
     with right:
-        if nTopic:
-            patient = st.info(f'Training model with {nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
-            lda = MyLDA(data, nTopic, passes, iters);  patient.empty()
+        if lda_nTopic:
+            patient = st.info(f'Training model with {lda_nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
+            lda = MyLDA(data, lda_nTopic, passes, iters);  patient.empty()
 #            if DEBUG: debug_msg.write(f'all topic words exist in LDA dict {all([True for word in topic_words if word in dictionary])}')
            
             if keyword:
