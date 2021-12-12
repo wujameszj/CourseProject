@@ -1,3 +1,19 @@
+### _Dear reviewers:_
+I just learned that with Google Chrome, there is a rare bug triggered by a few edge cases related to '_Bad message format: Unrecognized Rootcontainer in deltaPath_'.  
+It is unlikely that you will encounter the bug, but if you do, please try another browser (e.g. Microsoft Edge, Firefox, Safari).  
+My apologies for the inconvenience.
+
+Since it is past the deadline, I will not commit to the main branch.  
+However, I have created the branch 'bugfix' which should resolve the issue.  If you are testing locally, please consider launching the web app from that branch.  
+Thank you in advance for your kind understanding.
+
+Best,
+
+Zhou
+
+
+---  
+
 # CourseProject 
 
 The goal of this project is to develop a means of easily comparing topic modeling methods, such as [LDA](https://www.jmlr.org/papers/volume3/blei03a/blei03a.pdf) and [Top2Vec](https://arxiv.org/abs/2008.09470).  

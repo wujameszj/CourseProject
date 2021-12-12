@@ -19,8 +19,9 @@ def retrieve(dataset):
     
     
 AVAIL_DATA = ['sklearn20news', 'wikipedia (developmental)', 'arxiv (coming next)']
-DATA_MSG = 'The app is optimized for the Sklearn dataset.  \nOther options allow you to build a custom dataset for testing but tend to take a long time.  \n'
+DATA_MSG = 'The app is optimized for the Sklearn dataset.  \nOther options allow you to build a custom dataset for testing but tend to take a long time.'
 SCRAPE_MSG = "See what's trending on Wikipedia's Current Event portal.  \nEach day takes 3-5 minutes to scrape and increases model training time by roughly 1.2 times."
+BIG_WARN = 'Corpus might be too big. You may wish to shortern date range.  \nDepending on RAM availability, app may become unstable due to high memory usage during training.'
 
 def get_data(last_n_days=2):
     dataset = st.selectbox('data source', AVAIL_DATA, index=0, help=DATA_MSG)
@@ -41,7 +42,7 @@ def get_data(last_n_days=2):
             st.error('Corpus too small.  Try expanding the date range by two days to get more documents.')
             return None
         elif len(art)>299:
-            st.warning('Corpus might be too big.  Depending on RAM availability, app may become unstable due to high memory usage during training.') 
+            st.warning() 
             
         dataset = {'name': 'wikipedia', 'data': art}
     elif dataset == 'sklearn20news':

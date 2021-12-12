@@ -84,8 +84,14 @@ def main(debug):
 
 
 if __name__ == '__main__':
-    nltk.download('wordnet')
-    nltk.download('stopwords')
+    try:
+        nltk.data.find('corpora/stopwords')
+    except LookupError:
+        nltk.download('stopwords')
+    try:
+        nltk.data.find('corpora/wordnet')
+    except LookupError:
+        nltk.download('wordnet')        
     
     st.set_page_config('CS410 Project', layout="wide")
     st.title('Compare Topic Modeling Algorithms')
