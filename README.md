@@ -21,7 +21,7 @@ For heavy testing, it is recommended to run this app locally.
 
 The app has two components: 
 - a sidebar for user input and control parameters
-  1. choose dataset
+  1. choose dataset / web-scraping parameters
   2. set parameters such as number of topics 
   3. search topic models with a keyword
 - the main pane for displaying results
@@ -37,15 +37,19 @@ Currently supported algorithms are LDA and Top2Vec.  A simplified overview and c
 Although many features were planned for this app, a decision was made to make the first version simple, not overly cluttered with dozens of parameters and customization options. 
 
 Ideas for future releases:
+
+__Data__
 - expand available datasets for testing
-  - load dataset from local directory or URL
-  - scrape sites such as wikipedia and reddit based on user-defined timeframe and/or theme
-- phrase/multi-term search
-- show and compare time taken to train topic models and perform search 
+- speed up web scraping through parallelization
 - add options for lemmatization and word n-grams in vocabulary
+
+__Features__
+- phrase/multi-term search
 - add more algorithms for comparison  
-  
 - provide users to more parameters for fine-tuning models
+
+__Utility__
+- show and compare time taken to train topic models and perform search 
 - offer customizable result display:
   - number of documents to show
   - default height of document display box
