@@ -4,8 +4,8 @@ I just learned that with Google Chrome, there is a bug triggered by a few edge c
 It is unlikely that you will encounter the bug as it is rare, but if you do, please try another browser (e.g. Microsoft Edge, Firefox, Safari).  
 My apologies for the inconvenience.
 
-Since it is past the deadline, I will not commit to the main branch.  
-However, I have created the branch 'bugfix' which should resolve the issue.  If you are testing locally, please consider launching the web app from that branch.  
+__Since it is past the deadline, I will not commit to the main branch.__  
+However, I have created the branch 'bugfix' which should resolve the issue.  Another version of the web app based on the bugfix branch is deployed [here](https://share.streamlit.io/wujameszj/courseproject/bugfix/main.py).  If you are testing locally, you can also launch the web app from that branch.  
 
 Thank you in advance for your kind understanding.
 
