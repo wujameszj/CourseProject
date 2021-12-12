@@ -1,5 +1,6 @@
 ### _Dear reviewers:_
 I just learned that with Google Chrome, there is a rare bug triggered by a few edge cases related to '_Bad message format: Unrecognized Rootcontainer in deltaPath_'.  
+
 It is unlikely that you will encounter the bug, but if you do, please try another browser (e.g. Microsoft Edge, Firefox, Safari).  
 My apologies for the inconvenience.
 
