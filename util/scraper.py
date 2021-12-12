@@ -8,31 +8,45 @@ from datetime import date, timedelta
 from .misc import dwrite
 
 
+
 base = 'https://en.wikipedia.org'
 get_article = lambda url: BS(get(base+url).content, 'html.parser').get_text().strip()
 clean = lambda doc: doc[15 + doc.index('Jump to search\n'):]
 
 
+
 @st.experimental_memo 
 def get_articles_from(mydate, _soup):
+    
     _day = _soup.find(attrs={"aria-label": f"{mydate.strftime('%B')} {mydate.day}"})        # use double instead of single quote
     links = [a.get('href') for a in _day.find_all('a') if a.get('href').startswith('/wiki')]
-    return [clean(get_article(link)) for link in set(links)]
+    
+    try:
+        art = [clean(get_article(link)) for link in set(links)]
+    except Exception as e:
+        dwrite(f'Exception {mydate}: {repr(e)}')    
+    return art
+
     
     
 #@st.experimental_memo    
 def soup_of(mth, yr):
+    
     link = f'/wiki/Portal:Current_events/{mth}_{yr}'
-    return BS(get(base+link).content, 'html.parser')
+    try:
+        soup = BS(get(base+link).content, 'html.parser')
+    except Exception as e:
+        dwrite(f'Exception {yr} {mth}: {repr(e)}')
+        
+    return soup
+    
     
     
 @st.experimental_memo 
-def scrape(start, end, mydebug=True):
+def scrape(start, end):
     
     articles, newMonth = [], True
     while(start <= end):
-        if mydebug: dwrite(f'processing {start}\n')
-
         if newMonth: 
             soup = soup_of(start.strftime('%B'), start.year) 
         
@@ -45,12 +59,7 @@ def scrape(start, end, mydebug=True):
         start += timedelta(days=1)
         newMonth = True if start.day==1 else False
     
-    if mydebug:
-        dwrite(f'Collected {len(articles)} articles\n')
+        dwrite(f'{start} Collected {len(articles)} articles\n');  print(f'{start} Collected {len(articles)} articles\n')
 #        [dwrite(ar[:299] + '\n') for ar in articles[:2]]
         
     return articles
-
-
-
-## speed up web scrape through parallelization

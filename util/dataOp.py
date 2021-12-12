@@ -59,7 +59,7 @@ ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve
 
 def get_param(t2v_nTopic):
     nTopic = int(st.number_input(
-        'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nBased on Top2Vec, we recommend {t2v_nTopic} for this dataset.'))
+        'number of topics', 0, 999, 0, help=f'Larger number increases computation time.  \nA suggested number for this dataset based on Top2Vec is {t2v_nTopic}.'))
     with st.expander('optional training parameters'):
         passes = int(st.number_input('passes', 1, 99, 1, help=PASS_MSG))
         iters = int(st.number_input('iterations', 1, 999, 20, help=ITER_MSG))    

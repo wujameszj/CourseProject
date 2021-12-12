@@ -8,10 +8,14 @@ from time import time
 from .misc import dwrite
 
 
+
 N_PROC = int(environ.get('NUMBER_OF_PROCESSORS', 1))
+
+
 
 @st.experimental_memo 
 def train_top2vec(data, compromise=True):
+    
     if data['name'] == 'sklearn20news':
         return Top2Vec.load('models/20news.model')
     else:
@@ -25,12 +29,13 @@ def train_top2vec(data, compromise=True):
         
         t = time()
         model = Top2Vec(
-            corpus, min_count=min_doc_freq, keep_documents=False, speed='fast-learn',
+            corpus, min_count=min_doc_freq, keep_documents=False, speed=speed,
             workers=N_PROC if N_PROC < 2 else N_PROC-1
         )
         dwrite(f't2v {(time()-t)//60} min\n')
         
         return model
+    
     
     
 def relevant_topics_docs(t2v_model, keyword, nDoc):

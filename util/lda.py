@@ -15,6 +15,7 @@ from numpy import array, argmax, argpartition as argp, argsort
 from .misc import dwrite
 
 
+
 class MyLDA:
     
     def __init__(self, data, n, passes, iters):        
@@ -39,6 +40,7 @@ class MyLDA:
         return topicIDs, docIDs
              
         
+        
 @st.experimental_memo 
 def calc_relevance(corpus, wordID):
     return array([
@@ -46,6 +48,7 @@ def calc_relevance(corpus, wordID):
     ])
      
 
+    
 @st.experimental_memo 
 def preprocess(data, above=.8):
     regex, lemma = RegexpTokenizer(r'\w+'), WordNetLemmatizer()
@@ -67,6 +70,7 @@ def preprocess(data, above=.8):
     _ = dictionary[0]  # This is only to "load" the dictionary.
     
     return corpus, dictionary
+    
     
     
 @st.experimental_memo 
