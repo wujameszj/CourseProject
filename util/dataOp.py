@@ -3,7 +3,7 @@ from time import time
 from datetime import date, timedelta
 
 import streamlit as st
-from streamlit import date_input#, expander, number_input, selectbox, warning, experimental_memo as st_cache
+#from streamlit import date_input, expander, number_input, selectbox, warning, experimental_memo as st_cache
 
 from sklearn.datasets import fetch_20newsgroups as news
 
@@ -23,7 +23,7 @@ AVAIL_DATA = ['sklearn20news', 'wikipedia (developmental)', 'arxiv (coming next)
 DATA_MSG = 'The app is optimized for the Sklearn dataset.  \nOther options allow you to build a custom dataset for testing but tend to take a long time.  \n'
 SCRAPE_MSG = "See what's trending on Wikipedia's Current Event portal.  \nEach day takes 3-5 minutes to scrape and increases model training time by roughly 1.2 times."
 
-def get_data(last_n_days=1):
+def get_data(last_n_days=2):
     dataset = st.selectbox('data source', AVAIL_DATA, index=0, help=DATA_MSG)
 
     if dataset == 'wikipedia (developmental)':
@@ -39,7 +39,7 @@ def get_data(last_n_days=1):
         st.write(f'_Retrieved {len(art)} articles_')
 
         if len(art)<60: 
-            st.warning('Corpus too small.  Try expanding the date range to get more documents.')
+            st.error('Corpus too small.  Try expanding the date range by two days to get more documents.')
             return None
         elif len(art)>299:
             st.warning('Corpus might be too big.  Depending on RAM availability, app may become unstable due to high memory usage during training.') 
