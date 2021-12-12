@@ -10,7 +10,7 @@ from .scraper import scrape
         
         
 @st.experimental_memo
-def filter_keywords(topics, vocab, minWords=20):
+def filter_keywords(topics, vocab, minWords=30):
     wordsPerTopic = 1 if len(topics) > minWords else minWords//len(topics)
     return [None] + [words[i] for words in topics for i in range(wordsPerTopic) if words[i] in vocab and len(words[i])>2] 
 
