@@ -84,8 +84,8 @@ def main(debug):
 
 
 if __name__ == '__main__':
-    #nltk.download('wordnet')
-    #nltk.download('stopwords')
+    nltk.download('wordnet')
+    nltk.download('stopwords')
     
     st.set_page_config('CS410 Project', layout="wide")
     st.title('Compare Topic Modeling Algorithms')
