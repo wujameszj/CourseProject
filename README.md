@@ -1,7 +1,7 @@
 ### _Dear reviewers:_
-I just learned that with Google Chrome, there is a rare bug triggered by a few edge cases related to '_Bad message format: Unrecognized Rootcontainer in deltaPath_'.  
+I just learned that with Google Chrome, there is a bug triggered by a few edge cases related to '_Bad message format: Unrecognized Rootcontainer in deltaPath_'.  
 
-It is unlikely that you will encounter the bug, but if you do, please try another browser (e.g. Microsoft Edge, Firefox, Safari).  
+It is unlikely that you will encounter the bug as it is rare, but if you do, please try another browser (e.g. Microsoft Edge, Firefox, Safari).  
 My apologies for the inconvenience.
 
 Since it is past the deadline, I will not commit to the main branch.  
