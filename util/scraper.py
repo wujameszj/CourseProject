@@ -21,10 +21,15 @@ def get_articles_from(mydate, _soup):
     _day = _soup.find(attrs={"aria-label": f"{mydate.strftime('%B')} {mydate.day}"})        # use double instead of single quote
     links = [a.get('href') for a in _day.find_all('a') if a.get('href').startswith('/wiki')]
     
+    # for link in links[:1]:
+    #     soup = BS(get(base+link).content, 'html.parser')
+    #     articles.append(soup.get_text(strip=True).replace('\n', ' '))
+            
     try:
         art = [clean(get_article(link)) for link in set(links)]
     except Exception as e:
         dwrite(f'Exception {mydate}: {repr(e)}')    
+        
     return art
 
     
@@ -48,18 +53,13 @@ def scrape(start, end):
     articles, newMonth = [], True
     while(start <= end):
         if newMonth: 
-            soup = soup_of(start.strftime('%B'), start.year) 
-        
+            soup = soup_of(start.strftime('%B'), start.year)         
         articles += get_articles_from(start, soup)
         
-        # for link in links[:1]:
-        #     soup = BS(get(base+link).content, 'html.parser')
-        #     articles.append(soup.get_text(strip=True).replace('\n', ' '))
-        
-        start += timedelta(days=1)
-        newMonth = True if start.day==1 else False
-    
         dwrite(f'{start} Collected {len(articles)} articles\n');  print(f'{start} Collected {len(articles)} articles\n')
 #        [dwrite(ar[:299] + '\n') for ar in articles[:2]]
+
+        start += timedelta(days=1)
+        newMonth = True if start.day==1 else False
         
     return articles

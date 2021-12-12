@@ -42,7 +42,7 @@ def get_data(last_n_days=2):
             st.error('Corpus too small.  Try expanding the date range by two days to get more documents.')
             return None
         elif len(art)>299:
-            st.warning() 
+            st.warning(BIG_WARN) 
             
         dataset = {'name': 'wikipedia', 'data': art}
     elif dataset == 'sklearn20news':
