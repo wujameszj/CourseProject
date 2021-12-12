@@ -27,8 +27,7 @@ def main(debug):
     
     with st.sidebar:
         st.subheader('Step 1: Choose dataset')    
-        data = get_data()
-        msg.info('Preparing Top2Vec'); sleep(3); msg.empty()  # give user time to correct input before start -- training cannot be stopped midway
+        data = get_data(); sleep(3)  # give user time to correct input before start -- training cannot be stopped midway
     if not data: return   # invalid input; dont load rest of UI until new valid input is received 
 
 
@@ -41,11 +40,9 @@ def main(debug):
         st.subheader('Step 2: LDA parameters')
         lda_nTopic, passes, iters = get_param(len(t2v_topics))
 
-        
     with right:
         if lda_nTopic:
-            patient = st.info(f'Training model with {lda_nTopic} topics for {passes} passes and {iters} iterations. Please be patient.'); sleep(2)
-            lda = MyLDA(data, lda_nTopic, passes, iters);  patient.empty()
+            sleep(2); lda = MyLDA(data, lda_nTopic, passes, iters)
         
         
     with st.sidebar:

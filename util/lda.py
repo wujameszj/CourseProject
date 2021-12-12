@@ -19,22 +19,24 @@ from .displayIO import dwrite
 class MyLDA:
     
     def __init__(self, data, n, passes, iters):        
+        patient = st.info(f'Training model with {n} topics for {passes} passes and {iters} iterations. Please be patient.')
+        
         self.nTopic = n
         self.corpus, self.dictionary = preprocess(data['data'])
         self.vocab = list(self.dictionary.values())
 
         t = time()
         self.model = train(self.corpus, self.dictionary.id2token, n, passes, iters)
-        dwrite(f'LDA {(time()-t)//60} min\n')
+        dwrite(f'LDA {(time()-t)//60} min\n');  patient.empty()
         
         
-    def relevant_topics_docs(self, word, nExample):
+    def relevant_topics_docs(self, word, nDoc):
         topic_prob = self.model.get_term_topics(self.vocab.index(word), minimum_probability=0)
         idx = argmax([p for i,p in topic_prob])
         topicIDs = [ topic_prob[idx][0] ]
         
         doc_prob = calc_relevance(self.corpus, self.vocab.index(word))
-        docIDs = argp(doc_prob, -nExample*2)[-nExample*2:]
+        docIDs = argp(doc_prob, -nDoc)[-nDoc:]
         docIDs = docIDs[ argsort(doc_prob[docIDs])[::-1] ]    # list largest first  
                 
         return topicIDs, docIDs
@@ -50,7 +52,7 @@ def calc_relevance(corpus, wordID):
 
     
 @st.experimental_memo 
-def preprocess(data, above=.8):
+def preprocess(data, above=.5):
     regex, lemma = RegexpTokenizer(r'\w+'), WordNetLemmatizer()
     en_stop = set(stopwords.words('english'))
     useful = lambda token: True if token not in en_stop and len(token) > 2 and not token.isnumeric() else False
@@ -59,7 +61,7 @@ def preprocess(data, above=.8):
     docs = [[token for token in doc if useful(token)] for doc in docs]
     #docs = [[lemma.lemmatize(token) for token in doc] for doc in docs]
 
-    min_doc_freq = max(3, len(data)//999)
+    min_doc_freq = max(9, len(data)//999)
     dictionary = Dictionary(docs)
 
     before = len(dictionary)    
