@@ -10,6 +10,9 @@ import streamlit as st
 from numpy import array, argmax, argpartition as argp, argsort
 
 from os import environ
+from time import time
+
+from .misc import dwrite
 
 
 class MyLDA:
@@ -17,8 +20,11 @@ class MyLDA:
     def __init__(self, data, n, passes, iters):        
         self.nTopic = n
         self.corpus, self.dictionary = preprocess(data['data'])
-        self.model = train(self.corpus, self.dictionary.id2token, n, passes, iters)
         self.vocab = list(self.dictionary.values())
+
+        t = time()
+        self.model = train(self.corpus, self.dictionary.id2token, n, passes, iters)
+        dwrite(f'LDA {(time()-t)//60} min\n')
         
         
     def relevant_topics_docs(self, word, nExample):
@@ -40,8 +46,8 @@ def calc_relevance(corpus, wordID):
     ])
      
 
-@st.experimental_memo #(suppress_st_warning=True)
-def preprocess(data, below=2, above=.5):
+@st.experimental_memo
+def preprocess(data, above=.5):
     regex, lemma = RegexpTokenizer(r'\w+'), WordNetLemmatizer()
     en_stop = set(stopwords.words('english'))
     useful = lambda token: True if token not in en_stop and len(token) > 2 and not token.isnumeric() else False
@@ -50,13 +56,16 @@ def preprocess(data, below=2, above=.5):
     docs = [[token for token in doc if useful(token)] for doc in docs]
     #docs = [[lemma.lemmatize(token) for token in doc] for doc in docs]
 
+    min_doc_freq = min(3, len(data)//999)        
     dictionary = Dictionary(docs)
-    before = len(dictionary)
-    dictionary.filter_extremes(no_below=below, no_above=above, keep_n=None)  # keep all
-#    if DEBUG: debug_msg.write(f'filter_extremes removed {before} -> {len(dictionary)}')
+
+    before = len(dictionary)    
+    dictionary.filter_extremes(no_below=min_doc_freq, no_above=above, keep_n=None)  # keep all
+    dwrite(f'filter_extremes {before}->{len(dictionary)}')
     
     corpus = [dictionary.doc2bow(doc) for doc in docs]
     _ = dictionary[0]  # This is only to "load" the dictionary.
+    
     return corpus, dictionary
     
     
