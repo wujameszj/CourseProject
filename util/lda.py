@@ -1,4 +1,7 @@
 
+from os import environ
+from time import time
+
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer 
 from nltk.corpus import stopwords
@@ -7,10 +10,8 @@ from gensim.models import LdaModel
 from gensim.corpora import Dictionary
 
 import streamlit as st
+#from streamlit import experimental_memo as st_cache
 from numpy import array, argmax, argpartition as argp, argsort
-
-from os import environ
-from time import time
 
 from .misc import dwrite
 
@@ -39,15 +40,15 @@ class MyLDA:
         return topicIDs, docIDs
              
         
-@st.experimental_memo
+@st.experimental_memo 
 def calc_relevance(corpus, wordID):
     return array([
         sum([n if i==wordID else 0 for i,n in doc]) for doc in corpus
     ])
      
 
-@st.experimental_memo
-def preprocess(data, above=.5):
+@st.experimental_memo 
+def preprocess(data, above=.8):
     regex, lemma = RegexpTokenizer(r'\w+'), WordNetLemmatizer()
     en_stop = set(stopwords.words('english'))
     useful = lambda token: True if token not in en_stop and len(token) > 2 and not token.isnumeric() else False

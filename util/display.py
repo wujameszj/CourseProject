@@ -1,12 +1,14 @@
 from wordcloud import WordCloud
 import streamlit as st
+#from streamlit import container, image, text_area, experimental_memo as st_cache
 
 from top2vec import Top2Vec
 from gensim.models import LdaModel
 from numpy.random import random
 
 
-@st.experimental_memo
+#@st_cache
+@st.experimental_memo    
 def _create_wordcloud(word_prob):
     wc = WordCloud(width=1600, height=400, background_color='black')
     return wc.generate_from_frequencies(dict(word_prob)).to_array()

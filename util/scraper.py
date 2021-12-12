@@ -1,7 +1,9 @@
 
 from bs4 import BeautifulSoup as BS
 from requests import get 
+
 import streamlit as st
+#from streamlit import experimental_memo as st_cache
 
 from datetime import date, timedelta
 
@@ -11,7 +13,7 @@ from .misc import dwrite
 base = 'https://en.wikipedia.org'
 get_article = lambda url: BS(get(url).content, 'html.parser').get_text().strip()
 
-@st.experimental_memo
+@st.experimental_memo 
 def get_articles_from(mydate, _soup):
     _day = _soup.find(attrs={"aria-label": f"{mydate.strftime('%B')} {mydate.day}"})        # use double instead of single quote
     links = [a.get('href') for a in _day.find_all('a') if a.get('href').startswith('/wiki')]
@@ -24,7 +26,7 @@ def soup_of(mth, yr):
     return BS(get(base+link).content, 'html.parser')
     
     
-@st.experimental_memo
+@st.experimental_memo 
 def scrape(start, end, mydebug=True):
     
     articles, newMonth = [], True
