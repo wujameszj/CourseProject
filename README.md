@@ -6,6 +6,7 @@ My apologies for the inconvenience.
 
 Since it is past the deadline, I will not commit to the main branch.  
 However, I have created the branch 'bugfix' which should resolve the issue.  If you are testing locally, please consider launching the web app from that branch.  
+
 Thank you in advance for your kind understanding.
 
 Best,
