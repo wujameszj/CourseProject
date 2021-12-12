@@ -33,19 +33,25 @@ def main(debug):
 
 
     with left:
-        t2v_model = train_top2vec(data)
-       
-
-    t2v_nTopic = t2v_model.get_num_topics()
-    topics, _, __ = t2v_model.get_topics()
+        t2v = train_top2vec(data)
+        t2v_topics, _, __ = t2v.get_topics()
 
 
     with st.sidebar:
         st.subheader('Step 2: LDA parameters')
-        lda_nTopic, passes, iters = get_param(t2v_nTopic)
+        lda_nTopic, passes, iters = get_param(len(t2v_topics))
 
+        
+    with right:
+        if lda_nTopic:
+            patient = st.info(f'Training model with {lda_nTopic} topics for {passes} passes and {iters} iterations. Please be patient.'); sleep(2)
+            lda = MyLDA(data, lda_nTopic, passes, iters);  patient.empty()
+        
+        
+    with st.sidebar:
         st.subheader('Step 3: Compare topics and documents')
-        keyword = selectbox('search by keyword', filter_keywords(topics), help='This list consists of likely topic words in this dataset.')   # returns numpy_str
+        _vocab = lda.vocab if lda_nTopic else t2v_topics
+        keyword = selectbox('search by keyword', filter_keywords(t2v_topics, _vocab), help='This list consists of likely topic words in this dataset.')   # returns numpy_str
 
         st.write(AUTH_MSG)
                
@@ -53,22 +59,19 @@ def main(debug):
     DEFAULT_EXAMPLE = 6
     with left:
         if keyword:
-            topicIDs, docIDs = relevant_topics_docs(t2v_model, keyword, DEFAULT_EXAMPLE)
+            topicIDs, docIDs = relevant_topics_docs(t2v, keyword, DEFAULT_EXAMPLE)
             msg.info(f'Displaying top {DEFAULT_EXAMPLE} documents related to "{keyword}".')
         else:
-            nWordcloud = min(DEFAULT_EXAMPLE, t2v_nTopic)
+            nWordcloud = min(DEFAULT_EXAMPLE, len(t2v_topics))
             topicIDs, docIDs = range(nWordcloud), range(DEFAULT_EXAMPLE)
             msg.info(f'Displaying {DEFAULT_EXAMPLE} topics and documents.')
             
-        create_wordcloud(t2v_model, topicIDs)
+        create_wordcloud(t2v, topicIDs)
         display_doc(data, docIDs)
 
     
     with right:
         if lda_nTopic:
-            patient = st.info(f'Training model with {lda_nTopic} topics for {passes} passes and {iters} iterations. Please be patient.'); sleep(2)
-            lda = MyLDA(data, lda_nTopic, passes, iters);  patient.empty()
-            
             if keyword:
                 nDoc = min(DEFAULT_EXAMPLE, lda_nTopic)
                 topicIDs, docIDs = lda.relevant_topics_docs(keyword, nDoc)              
@@ -77,9 +80,8 @@ def main(debug):
                 topicIDs, docIDs = range(nWordcloud), range(DEFAULT_EXAMPLE)
             
             create_wordcloud(lda.model, topicIDs)
-            display_doc(data, docIDs)        
-#            if DEBUG: debug_msg.write(f'all topic words exist in LDA dict {all([True for word in topic_words if word in dictionary])}')
-
+            display_doc(data, docIDs)
+            
 
 
 if __name__ == '__main__':
@@ -94,10 +96,6 @@ if __name__ == '__main__':
     
     st.set_page_config('CS410 Project', layout="wide")
     st.title('Compare Topic Modeling Algorithms')
-    
-    DEBUG = False
-    if DEBUG:
-        debug_msg = st.container()
-    
+        
     main(True)
     

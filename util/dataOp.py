@@ -10,15 +10,15 @@ from .scraper import scrape
         
         
 @st.experimental_memo
-def filter_keywords(topics, minWords=10):
+def filter_keywords(topics, vocab, minWords=20):
     wordsPerTopic = 1 if len(topics) > minWords else minWords//len(topics)
-    return [None] + [words[i] for words in topics for i in range(wordsPerTopic) if len(words[i])>2] 
+    return [None] + [words[i] for words in topics for i in range(wordsPerTopic) if words[i] in vocab and len(words[i])>2] 
 
 
     
 AVAIL_DATA = ['sklearn20news', 'wikipedia', 'arxiv (coming next)']
 DATA_MSG = 'The app is optimized for the Sklearn dataset.  \nOther options allow you to build a custom dataset for testing but tend to take a long time.'
-SCRAPE_MSG = "See what's trending on Wikipedia's Current Event portal.  \nEach day takes 1-2 minutes to scrape and increases model training time by roughly 1.2 times."
+SCRAPE_MSG = "See what's trending on Wikipedia's Current Event portal.  \nA wider date range increases training time and memory usage."
 BIG_WARN = 'Corpus is a bit big. Consider shorterning date range.  \nApp may become unstable due to high memory usage during training.'
 
 
