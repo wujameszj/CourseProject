@@ -1,5 +1,4 @@
 
-from time import time
 from datetime import date, timedelta
 
 import streamlit as st
@@ -31,11 +30,7 @@ def get_data(last_n_days=2):
         dates = st.date_input('Get articles between:', default, date(2018,1,1), date.today(), help=SCRAPE_MSG)
         if len(dates)==1: return None
 
-        t = time()
         art = scrape(*dates)
-        scrape_time = (time()-t)//60
-
-        dwrite(f'scrape {scrape_time} min\n')
         st.write(f'_Retrieved {len(art)} articles_')
 
         if len(art)<60: 
