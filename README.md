@@ -22,9 +22,10 @@ For heavy testing, it is recommended to run this app locally.
 The app has two components: 
 
 A sidebar for user input and control parameters
-  - choose dataset / web-scraping parameters
-  - set parameters such as number of topics  
-  - search topic models with a keyword
+- choose dataset / web-scraping parameters
+- set parameters such as number of topics
+- search topic models with a keyword
+
 The main pane for displaying results
   - each algorithm has a dedicated column, lined up side-by-side for ease of comparison
   - topics shown via wordclouds where word size corresponds to term weight
