@@ -1,65 +1,24 @@
 
-from top2vec import Top2Vec
-from gensim.models import LdaModel 
 import nltk
-from sklearn.datasets import fetch_20newsgroups as news
 import streamlit as st
 
 from os import environ
+from time import time
 from datetime import date, timedelta
 
-from util.scraper import scrape
+from util.dataOp import get_data
 from util.lda import MyLDA
+from util.t2v import train_top2vec
 from util.display import create_wordcloud, display_doc
+from util.misc import filter_keywords, dwrite
 
 
-
-@st.experimental_memo  
-def train_top2vec(data):
-    if data['name'] == 'sklearn20news':
-        return Top2Vec.load('models/20news.model')
-    else:
-        #return Top2Vec.load('models/20news.model')
-        return Top2Vec(
-            data['data'], min_count=9, keep_documents=False, 
-            workers=int(environ.get('NUMBER_OF_PROCESSORS', 1))
-        )
-
-    
-@st.experimental_memo  
-def retrieve(dataset):    
-    if dataset == 'sklearn20news':
-        return news(subset='all', remove=('headers','footers','quotes')).data
-    
-   
-AVAIL_DATA = ['sklearn20news', 'wikipedia', 'arxiv (in development)', 'reddit (in development)']
-
-DATA_MSG = 'The app is optimized for the Sklearn dataset.  \nOther options allow you to build a custom dataset for testing but tend to take a long time.  \n'
-SCRAPE_MSG = "See what's trending on Wikipedia's Current Event portal.  \nEach day takes 3-5 minutes to scrape and increases model training time by roughly 1.2 times."
+N_PROC = int(environ.get('NUMBER_OF_PROCESSORS', 1))
 PASS_MSG = 'Number of passes through corpus, i.e., passes per mini-batch.  \nMore may improve model by facilitating convergence for small corpora at the cost of computation time.'
 ITER_MSG = 'Number of E-step per document per pass.  \nHigher number may improve model by fascilitating document convergence at the cost of computation time.'
 MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
-           f"App feels sluggish? Sorry about that.  \n_... Detecting ... {environ.get('NUMBER_OF_PROCESSORS', 1)} worker available._  \n\n"
+           f"App feels sluggish? Sorry about that.  \n_... Detecting ... {N_PROC} worker available._  \n\n"
             'Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
-
-
-
-def get_data(last_n_days=2):
-    with st.sidebar:
-        st.subheader('Step 1: Choose dataset')
-        dataset = st.selectbox('data source', AVAIL_DATA, index=0, help=DATA_MSG)
-        
-        if dataset == 'wikipedia':
-            default = [date.today()-timedelta(days=last_n_days), date.today()]
-            dates = st.date_input('Get articles between:', default, date(2018,1,1), date.today(), help=SCRAPE_MSG)
-            if len(dates)==1: return None
-            
-            art = scrape(*dates)
-            st.write(f'_Retrieved {len(art)} articles_')
-            data = {'name': 'wikipedia', 'data': art}
-        elif dataset == 'sklearn20news':
-            data = {'name': 'sklearn20news', 'data': retrieve(dataset)}
-    return data
 
 
 def get_param(t2v_nTopic):
@@ -71,12 +30,7 @@ def get_param(t2v_nTopic):
     return nTopic, passes, iters
 
 
-@st.experimental_memo
-def _filter(topics):
-    return [None] + [words[0] for words in topics if len(words[0])>2] 
-
-
-def main():
+def main(debug):
     msg = st.empty()
     left, right = st.columns(2)
     left.header('Top2Vec'); right.header('LDA')
@@ -86,7 +40,10 @@ def main():
 
 
     with left:
+        t = time()
         t2v_model = train_top2vec(data)
+        t2v_time = (time()-t)//60
+        if debug: dwrite(f't2v {t2v_time} min\n')
 
     t2v_nTopic = t2v_model.get_num_topics()
     topics, _, __ = t2v_model.get_topics()
@@ -97,7 +54,7 @@ def main():
         lda_nTopic, passes, iters = get_param(t2v_nTopic)
 
         st.subheader('Step 3: Compare topics and documents')
-        keyword = st.selectbox('search by keyword', _filter(topics), help='This list consists of likely topic words in this dataset.')   # returns numpy_str
+        keyword = st.selectbox('search by keyword', filter_keywords(topics), help='This list consists of likely topic words in this dataset.')   # returns numpy_str
 
         st.write(MISC_MSG)
                
@@ -105,10 +62,8 @@ def main():
     DEFAULT_EXAMPLE = 6
     with left:
         if keyword:
-            nWordcloud, nDoc = 1, min(DEFAULT_EXAMPLE, t2v_nTopic)
-            _,_,_, topicIDs = t2v_model.query_topics(str(keyword), nWordcloud)         # top2vec doesnt accept numpy_str, though LDA (gensim) does
-            _, docIDs = t2v_model.search_documents_by_keywords([keyword], nDoc, return_documents=False, ef=len(data['data']))
-            msg.info(f'Displaying top {nDoc} documents related to "{keyword}".')
+            topicIDs, docIDs = relevant_topics_docs(t2v_model, keyword)
+            msg.info(f'Displaying top {DEFAULT_EXAMPLE} documents related to "{keyword}".')
         else:
             nWordcloud = min(DEFAULT_EXAMPLE, t2v_nTopic)
             topicIDs, docIDs = range(nWordcloud), range(DEFAULT_EXAMPLE)
@@ -121,13 +76,20 @@ def main():
     with right:
         if lda_nTopic:
             patient = st.info(f'Training model with {lda_nTopic} topics for {passes} passes and {iters} iterations. Please be patient.')
+            t = time()
+            
             lda = MyLDA(data, lda_nTopic, passes, iters);  patient.empty()
+            lda_time = (time()-t)//60
+            if debug: dwrite(f'lda {lda_time} min\n')
+
 #            if DEBUG: debug_msg.write(f'all topic words exist in LDA dict {all([True for word in topic_words if word in dictionary])}')
            
             if keyword:
-                topicIDs, docIDs = lda.relevant_topics_docs(keyword, nExample)              
+                nDoc = min(DEFAULT_EXAMPLE, lda_nTopic)
+                topicIDs, docIDs = lda.relevant_topics_docs(keyword, nDoc)              
             else:
-                topicIDs, docIDs = range(nExample*2), range(nExample*2, nExample*4)
+                nWordcloud = min(DEFAULT_EXAMPLE, lda_nTopic)
+                topicIDs, docIDs = range(nWordcloud), range(DEFAULT_EXAMPLE)
             
             create_wordcloud(lda.model, topicIDs)
             display_doc(data, docIDs)        
@@ -145,5 +107,5 @@ if __name__ == '__main__':
     if DEBUG:
         debug_msg = st.container()
     
-    main()
+    main(True)
     

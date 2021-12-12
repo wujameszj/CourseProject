@@ -1,14 +1,11 @@
+
 from bs4 import BeautifulSoup as BS
 from requests import get 
-from datetime import date, timedelta
-
 import streamlit as st
 
+from datetime import date, timedelta
 
-
-def dwrite(txt):
-    with open('scrape.log', 'a', encoding='utf-8') as f:
-        f.write(txt+'\n')
+from .misc import dwrite
 
 
 base = 'https://en.wikipedia.org'
@@ -48,7 +45,7 @@ def scrape(start, end, mydebug=True):
     
     if mydebug:
         dwrite(f'Collected {len(articles)} articles\n')
-        [dwrite(ar[:299] + '\n') for ar in articles[:2]]
+#        [dwrite(ar[:299] + '\n') for ar in articles[:2]]
         
     return articles
 
