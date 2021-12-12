@@ -73,7 +73,7 @@ def preprocess(data, above=.8):
 @st.experimental_memo 
 def train(corpus, id2token, nTopic, passes, iters):
     model = LdaModel(
-        corpus, nTopic, id2token, chunksize=environ.get('CHUNK', 99999), passes=passes, iterations=iters, update_every=1, 
+        corpus, nTopic, id2token, chunksize=int(environ.get('CHUNK', 99999)), passes=passes, iterations=iters, update_every=1, 
         alpha='auto', eta='auto', minimum_probability=0, eval_every=None
     ) 
     return model

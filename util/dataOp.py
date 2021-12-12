@@ -28,7 +28,7 @@ def get_data(last_n_days=1):
 
     if dataset == 'wikipedia (developmental)':
         default = [date.today()-timedelta(days=last_n_days), date.today()]
-        dates = date_input('Get articles between:', default, date(2018,1,1), date.today(), help=SCRAPE_MSG)
+        dates = st.date_input('Get articles between:', default, date(2018,1,1), date.today(), help=SCRAPE_MSG)
         if len(dates)==1: return None
 
         t = time()
