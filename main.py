@@ -7,15 +7,14 @@ import nltk
 import streamlit as st
 from streamlit import sidebar, subheader, selectbox
 
-from util.dataOp import get_data, get_param
+from util.dataOp import get_data, get_param, filter_keywords
 from util.lda import MyLDA
 from util.t2v import train_top2vec, relevant_topics_docs
-from util.display import create_wordcloud, display_doc
-from util.misc import filter_keywords, dwrite
+from util.displayIO import create_wordcloud, display_doc, dwrite
 
 
 
-MISC_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
+AUTH_MSG = ('_ _ _\n**Shoutout to Streamlit for generously hosting this app for free! \U0001f600**  \n- - -\n'
            f"App feels sluggish? Sorry about that.  \n_... Detecting ... {env.get('NUMBER_OF_PROCESSORS', 1)} worker available._  \n\n"
             'Run the app locally:  \n[Source code on Github](https://github.com/wujameszj/CourseProject)')
 
@@ -48,7 +47,7 @@ def main(debug):
         st.subheader('Step 3: Compare topics and documents')
         keyword = selectbox('search by keyword', filter_keywords(topics), help='This list consists of likely topic words in this dataset.')   # returns numpy_str
 
-        st.write(MISC_MSG)
+        st.write(AUTH_MSG)
                
     
     DEFAULT_EXAMPLE = 6

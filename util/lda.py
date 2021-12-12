@@ -12,7 +12,7 @@ from gensim.corpora import Dictionary
 import streamlit as st
 from numpy import array, argmax, argpartition as argp, argsort
 
-from .misc import dwrite
+from .displayIO import dwrite
 
 
 
@@ -59,7 +59,7 @@ def preprocess(data, above=.8):
     docs = [[token for token in doc if useful(token)] for doc in docs]
     #docs = [[lemma.lemmatize(token) for token in doc] for doc in docs]
 
-    min_doc_freq = min(3, len(data)//999)        
+    min_doc_freq = max(3, len(data)//999)
     dictionary = Dictionary(docs)
 
     before = len(dictionary)    
@@ -75,11 +75,8 @@ def preprocess(data, above=.8):
     
 @st.experimental_memo 
 def train(corpus, id2token, nTopic, passes, iters):
-    model = LdaModel(
-        corpus, nTopic, id2token, chunksize=int(environ.get('CHUNK', 99999)), passes=passes, iterations=iters, update_every=1, 
+    return LdaModel(
+        corpus, nTopic, id2token, chunksize=int(environ.get('CHUNK', 99999)), 
+        passes=passes, iterations=iters, update_every=1, 
         alpha='auto', eta='auto', minimum_probability=0, eval_every=None
     ) 
-    return model
-
-
-

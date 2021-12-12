@@ -6,22 +6,29 @@ import streamlit as st
 from sklearn.datasets import fetch_20newsgroups as news
 
 from .scraper import scrape
-from .misc import dwrite
+
+        
+        
+@st.experimental_memo
+def filter_keywords(topics, minWords=10):
+    wordsPerTopic = 1 if len(topics) > minWords else minWords//len(topics)
+    return [None] + [words[i] for words in topics for i in range(wordsPerTopic) if len(words[i])>2] 
+
+
+    
+AVAIL_DATA = ['sklearn20news', 'wikipedia', 'arxiv (coming next)']
+DATA_MSG = 'The app is optimized for the Sklearn dataset.  \nOther options allow you to build a custom dataset for testing but tend to take a long time.'
+SCRAPE_MSG = "See what's trending on Wikipedia's Current Event portal.  \nEach day takes 1-2 minutes to scrape and increases model training time by roughly 1.2 times."
+BIG_WARN = 'Corpus is a bit big. Consider shorterning date range.  \nApp may become unstable due to high memory usage during training.'
 
 
 
 @st.experimental_memo 
-def retrieve(dataset):    
-    if dataset == 'sklearn20news':
-        return news(subset='all', remove=('headers','footers','quotes')).data
+def get_news():    
+    return news(subset='all', remove=('headers','footers','quotes')).data
     
     
     
-AVAIL_DATA = ['sklearn20news', 'wikipedia', 'arxiv (coming next)']
-DATA_MSG = 'The app is optimized for the Sklearn dataset.  \nOther options allow you to build a custom dataset for testing but tend to take a long time.'
-SCRAPE_MSG = "See what's trending on Wikipedia's Current Event portal.  \nEach day takes 3-5 minutes to scrape and increases model training time by roughly 1.2 times."
-BIG_WARN = 'Corpus might be too big. You may wish to shortern date range.  \nDepending on RAM availability, app may become unstable due to high memory usage during training.'
-
 def get_data(last_n_days=2):
     dataset = st.selectbox('data source', AVAIL_DATA, index=0, help=DATA_MSG)
 
@@ -34,14 +41,14 @@ def get_data(last_n_days=2):
         st.write(f'_Retrieved {len(articles)} articles_')
 
         if len(articles)<60: 
-            st.error('Corpus too small.  Try expanding the date range by two days to get more documents.')
+            st.error('Corpus too small. Try expanding the date range by one day to get more documents.')
             return None
-        elif len(articles)>299:
+        elif len(articles)>399:
             st.warning(BIG_WARN) 
             
         dataset = {'name': AVAIL_DATA[1], 'data': articles}
     elif dataset == AVAIL_DATA[0]:
-        dataset = {'name': AVAIL_DATA[0], 'data': retrieve(dataset)}
+        dataset = {'name': AVAIL_DATA[0], 'data': get_news()}
     else:
         return None
     
@@ -60,3 +67,5 @@ def get_param(t2v_nTopic):
         passes = int(st.number_input('passes', 1, 99, 1, help=PASS_MSG))
         iters = int(st.number_input('iterations', 1, 999, 20, help=ITER_MSG))    
     return nTopic, passes, iters
+
+

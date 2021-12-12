@@ -5,12 +5,10 @@ import streamlit as st
 from os import environ
 from time import time
 
-from .misc import dwrite
-
+from .displayIO import dwrite
 
 
 N_PROC = int(environ.get('NUMBER_OF_PROCESSORS', 1))
-
 
 
 @st.experimental_memo 
@@ -20,7 +18,7 @@ def train_top2vec(data, compromise=True):
         return Top2Vec.load('models/20news.model')
     else:
         corpus = data['data']
-        min_doc_freq = min(3, len(corpus)//999)
+        min_doc_freq = max(3, len(corpus)//999)
         
         if compromise:
             speed = 'learn' if len(corpus) < 99 else 'fast-learn'
