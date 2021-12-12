@@ -26,7 +26,7 @@ A sidebar for user input and control parameters
 - set parameters such as number of topics
 - search topic models with a keyword
 
-The main pane for displaying results
+- The main pane for displaying results
   - each algorithm has a dedicated column, lined up side-by-side for ease of comparison
   - topics shown via wordclouds where word size corresponds to term weight
   - documents returned from keyword search are displayed in height-adjustable boxes
