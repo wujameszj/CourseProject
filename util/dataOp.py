@@ -39,10 +39,10 @@ def get_data(last_n_days=1):
         st.write(f'_Retrieved {len(art)} articles_')
 
         if len(art)<60: 
-            warning('Corpus too small.  Try expanding the date range to get more documents.')
+            st.warning('Corpus too small.  Try expanding the date range to get more documents.')
             return None
         elif len(art)>299:
-            warning('Corpus might be too big.  Depending on RAM availability, app may become unstable due to high memory usage during training.') 
+            st.warning('Corpus might be too big.  Depending on RAM availability, app may become unstable due to high memory usage during training.') 
             
         dataset = {'name': 'wikipedia', 'data': art}
     elif dataset == 'sklearn20news':
