@@ -10,7 +10,6 @@ from gensim.models import LdaModel
 from gensim.corpora import Dictionary
 
 import streamlit as st
-#from streamlit import experimental_memo as st_cache
 from numpy import array, argmax, argpartition as argp, argsort
 
 from .misc import dwrite

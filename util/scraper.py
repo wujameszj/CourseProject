@@ -3,21 +3,21 @@ from bs4 import BeautifulSoup as BS
 from requests import get 
 
 import streamlit as st
-#from streamlit import experimental_memo as st_cache
-
 from datetime import date, timedelta
 
 from .misc import dwrite
 
 
 base = 'https://en.wikipedia.org'
-get_article = lambda url: BS(get(url).content, 'html.parser').get_text().strip()
+get_article = lambda url: BS(get(base+url).content, 'html.parser').get_text().strip()
+clean = lambda doc: doc[15 + doc.index('Jump to search\n'):]
+
 
 @st.experimental_memo 
 def get_articles_from(mydate, _soup):
     _day = _soup.find(attrs={"aria-label": f"{mydate.strftime('%B')} {mydate.day}"})        # use double instead of single quote
     links = [a.get('href') for a in _day.find_all('a') if a.get('href').startswith('/wiki')]
-    return [get_article(base+link) for link in set(links)]
+    return [clean(get_article(link)) for link in set(links)]
     
     
 #@st.experimental_memo    

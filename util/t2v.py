@@ -1,7 +1,6 @@
 
 from top2vec import Top2Vec
 import streamlit as st
-#from streamlit import experimental_memo as st_cache
 
 from os import environ
 from time import time
