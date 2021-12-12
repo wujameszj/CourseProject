@@ -16,30 +16,33 @@ base = 'https://en.wikipedia.org'
 
 remove_foreign = lambda doc: ' '.join([word for word in doc.split(' ') if word.isascii()])
 
-def clean(doc, multi_lang=False):
+def clean(doc, multi_lang):
     doc = doc[15 + doc.index('Jump to search\n'):]
     return doc if multi_lang else remove_foreign(doc)
 
 
-get_article = lambda url: BS(get(base+url).content, 'html.parser').get_text().strip()
-
 @st.experimental_memo 
-def get_articles_from(mydate, _soup):
+def get_article(url, multi_lang=False):
+    try:
+        article = BS(get(base+url).content, 'html.parser').get_text().strip()
+        return clean(article, multi_lang)
+    except Exception as e:
+        dwrite(f'Exception {url}: {repr(e)}')          
+        return ''
+
+
     
-    _day = _soup.find(attrs={'aria-label': f"{mydate.strftime('%B')} {mydate.day}"})
+@st.experimental_memo 
+def get_links_on(mydate, _soup):
     
+    _day = _soup.find(attrs={'aria-label': f"{mydate.strftime('%B')} {mydate.day}"})  
     links = [a.get('href') for a in _day.find_all('a') if a.get('href').startswith('/wiki')]
     
     # for link in links[:1]:
     #     soup = BS(get(base+link).content, 'html.parser')
-    #     articles.append(soup.get_text(strip=True).replace('\n', ' '))
-            
-    try:
-        return [clean(get_article(link)) for link in set(links)]        
-    except Exception as e:
-        dwrite(f'Exception {mydate}: {repr(e)}')    
-        st.experimental_rerun()
-
+    #     articles.append(soup.get_text())
+    return links
+    
     
     
 #@st.experimental_memo    
@@ -58,20 +61,19 @@ def soup_of(mth, yr):
     
 @st.experimental_memo 
 def scrape(start, end):
+    t = time()    
     
-    articles, newMonth = [], True
+    links, newMonth = [], True
     while(start <= end):
         if newMonth: 
             soup = soup_of(start.strftime('%B'), start.year)         
-
-        t = time()    
-        articles += get_articles_from(start, soup)
-
-        dwrite(f'{start} Collected {len(articles)} articles in {time()-t} sec\n')
-        print(f'{start} Collected {len(articles)} articles in {time()-t} sec\n')
-#        [dwrite(ar[:299] + '\n') for ar in articles[:2]]
+        links += get_links_on(start, soup)
 
         start += timedelta(days=1)
         newMonth = True if start.day==1 else False
         
+    articles = [get_article(link) for link in set(links)]
+
+    dwrite(f'{start} Collected {len(articles)} articles in {int(time()-t)} sec\n')
+    
     return articles
