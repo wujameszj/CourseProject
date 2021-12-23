@@ -1,21 +1,3 @@
-### _Dear reviewers:_
-
->I just learned that with Google Chrome, there is a bug triggered by a few edge cases related to '_Bad message format: Unrecognized Rootcontainer in deltaPath_'.  
->
->It is unlikely that you will encounter the bug as it is rare, but if you do, please try another browser (e.g. Microsoft Edge, Firefox, Safari).  
-My apologies for the inconvenience.
->
->__Since it is past the deadline technically, albeit only by 12 hours, I will not change the implementation of the web app from the main branch.__  
->However, I have added a fix in the branch 'bugfix'. If you like, you can access another version of the web app based on the bugfix branch [here](https://share.streamlit.io/wujameszj/courseproject/bugfix/main.py). If you are testing locally, you can also launch the web app from that branch.  
->
->Thank you in advance for your kind understanding.
->
->Best,
->
->Zhou (James)
-
-
----  
 
 # CourseProject 
 
