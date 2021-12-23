@@ -1,3 +1,4 @@
+
 from wordcloud import WordCloud
 import streamlit as st
 
@@ -6,7 +7,7 @@ from gensim.models import LdaModel
 from numpy.random import random
 
 
-#@st_cache
+
 @st.experimental_memo    
 def _create_wordcloud(word_prob):
     wc = WordCloud(width=1600, height=400, background_color='black')
@@ -26,10 +27,17 @@ def create_wordcloud(model, topicIDs, nWords=22):
             st.image(_create_wordcloud(word_prob))
     
     
+    
 def display_doc(data, docIDs):
     docs = [data['data'][i] for i in docIDs] 
     for doc in docs:
         doc = doc.strip()
         n = doc.count('\n') * 30  # pixels per line
         st.text_area('', doc, height=400 if n > 400 else n, key=random(), help='You can adjust the height of the text display by dragging from the bottom-right corner.')
+    
+
+
+def dwrite(txt):
+    with open('scrape.log', 'a', encoding='utf-8') as f:
+        f.write(txt+'\n')    
     

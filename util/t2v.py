@@ -5,32 +5,38 @@ import streamlit as st
 from os import environ
 from time import time
 
-from .misc import dwrite
+from .displayIO import dwrite
 
 
 N_PROC = int(environ.get('NUMBER_OF_PROCESSORS', 1))
 
-@st.experimental_memo 
+
+@st.experimental_memo(suppress_st_warning=True)
 def train_top2vec(data, compromise=True):
+    
     if data['name'] == 'sklearn20news':
         return Top2Vec.load('models/20news.model')
     else:
         corpus = data['data']
-        min_doc_freq = min(3, len(corpus)//999)
+        nDoc = len(corpus)
+        min_doc_freq = max(5, int(nDoc/99))
         
         if compromise:
-            speed = 'learn' if len(corpus) < 99 else 'fast-learn'
+            speed = 'learn' if nDoc < 99 else 'fast-learn'
         else:
             speed = 'learn'
         
-        t = time()
+        t = time(); patient = st.info(f'Please be patient... _speed={speed}, min_doc_freq={min_doc_freq}_')
+        
         model = Top2Vec(
-            corpus, min_count=min_doc_freq, keep_documents=False, speed='fast-learn',
+            corpus, min_count=min_doc_freq, keep_documents=False, speed=speed,
             workers=N_PROC if N_PROC < 2 else N_PROC-1
         )
-        dwrite(f't2v {(time()-t)//60} min\n')
+        
+        dwrite(f't2v {(time()-t)//60} min\n');  patient.empty()
         
         return model
+    
     
     
 def relevant_topics_docs(t2v_model, keyword, nDoc):
