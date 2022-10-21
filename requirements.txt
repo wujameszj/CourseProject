@@ -1,3 +1,4 @@
+joblib==1.1.0
 top2vec==1.0.26
 gensim==3.8.3
 streamlit==1.2.0
